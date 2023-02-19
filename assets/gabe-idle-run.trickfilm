@@ -1,0 +1,10 @@
+(
+    animations: {
+        "run": (
+            path: "gabe-idle-run.titan",
+            repeating: true,
+            fps: 10,
+            indices: [0,1,2,3,4,5,6],
+        ),
+    },
+)

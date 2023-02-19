@@ -1,0 +1,19 @@
+[package]
+name = "bevy_trickfilm"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = { version = "0.9", default-features = false, features=["bevy_asset", "render"]}
+serde = { version = "1", features = ["derive"] }
+ron = "0.8.0"
+
+[dev-dependencies]
+bevy = "0.9"
+bevy_titan = "0.1"
+
+[[example]]
+name = "spritesheet_animation"
+path = "examples/spritesheet_animation.rs"

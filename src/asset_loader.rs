@@ -54,12 +54,12 @@
 //!
 //! ```
 
-
 use bevy::{
     asset::{AssetLoader, AssetPath, LoadContext, LoadedAsset},
     prelude::Handle,
+    reflect::TypeUuid,
     sprite::TextureAtlas,
-    utils::{BoxedFuture, HashMap, HashSet}, reflect::TypeUuid,
+    utils::{BoxedFuture, HashMap, HashSet},
 };
 use serde::Deserialize;
 use std::path::PathBuf;
@@ -78,25 +78,32 @@ impl AssetLoader for SpriteSheetAnimationLoader {
         load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
         Box::pin(async move {
-            let spritesheet_animationset_manifest = ron::de::from_bytes::<SpriteSheetAnimationSetManifest>(bytes)?;
+            let spritesheet_animationset_manifest =
+                ron::de::from_bytes::<SpriteSheetAnimationSetManifest>(bytes)?;
 
             let mut spritesheet_animationset = SpriteSheetAnimationSet {
                 name: spritesheet_animationset_manifest.name,
                 ..Default::default()
             };
             let mut dependencies = HashSet::new();
-            for (animation_name,spritesheet_animation_manifest) in spritesheet_animationset_manifest.animations {
-                let spritesheet_animation_asset_path = AssetPath::new(PathBuf::from(&spritesheet_animation_manifest.path), None);
+            for (animation_name, spritesheet_animation_manifest) in
+                spritesheet_animationset_manifest.animations
+            {
+                let spritesheet_animation_asset_path =
+                    AssetPath::new(PathBuf::from(&spritesheet_animation_manifest.path), None);
                 dependencies.insert(spritesheet_animation_asset_path.clone());
 
-                let texture_atlas_handle: Handle<TextureAtlas> = load_context.get_handle(spritesheet_animation_asset_path.clone());
+                let texture_atlas_handle: Handle<TextureAtlas> =
+                    load_context.get_handle(spritesheet_animation_asset_path.clone());
                 let spritesheet_animation = SpriteSheetAnimation {
                     texture_atlas_handle,
                     repeating: spritesheet_animation_manifest.repeating,
                     fps: spritesheet_animation_manifest.fps,
                     indices: spritesheet_animation_manifest.indices,
                 };
-                spritesheet_animationset.animations.insert(animation_name, spritesheet_animation);
+                spritesheet_animationset
+                    .animations
+                    .insert(animation_name, spritesheet_animation);
             }
 
             let mut spritesheet_animation_asset = LoadedAsset::new(spritesheet_animationset);
@@ -146,4 +153,3 @@ pub struct SpriteSheetAnimation {
     pub fps: usize,
     pub indices: Vec<usize>,
 }
-

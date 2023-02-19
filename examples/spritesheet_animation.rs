@@ -4,7 +4,7 @@
 
 use bevy::prelude::*;
 use bevy_titan::SpriteSheetLoaderPlugin;
-use bevy_trickfilm::{SpriteSheetAnimationLoaderPlugin, animation::SpriteSheetAnimationPlayer};
+use bevy_trickfilm::{animation::SpriteSheetAnimationPlayer, SpriteSheetAnimationLoaderPlugin};
 
 fn main() {
     App::new()
@@ -23,6 +23,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             transform: Transform::from_scale(Vec3::splat(6.0)),
             ..default()
         },
-        SpriteSheetAnimationPlayer::new(spritesheet_animationset_handle).with_animation(String::from("run").into()),
+        SpriteSheetAnimationPlayer::new(spritesheet_animationset_handle)
+            .with_animation(String::from("run").into()),
     ));
 }

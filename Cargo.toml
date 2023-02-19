@@ -1,7 +1,15 @@
 [package]
+authors = ["KirmesBude <kirmesbude@gmail.com>"]
 name = "bevy_trickfilm"
 version = "0.1.0"
 edition = "2021"
+description = "Bevy plugin for spritesheet manifest loading"
+repository = "https://github.com/KirmesBude/bevy_trickfilm"
+license = "MIT OR Apache-2.0"
+keywords = ["gamedev", "bevy", "animation", "spritesheet", "assets"]
+categories = ["game-development"]
+readme = "README.md"
+exclude = ["/assets"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

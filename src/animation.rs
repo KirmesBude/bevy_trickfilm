@@ -1,67 +1,45 @@
-//! This crate allows you to directly load a TextureAtlas from a manifest file.
+//! This module handles playing animations from an ['SpriteSheetAnimationSet'](crate::asset_loader::SpriteSheetAnimationSet) Asset.
 //!
-//! `bevy_titan` introduces a [`SpriteSheetManifest`](crate::SpriteSheetManifest) and the corresponding [`SpriteSheetLoader`](crate::SpriteSheetLoader).
-//! Assets with the 'titan' extension can be loaded just like any other asset via the [`AssetServer`](::bevy::asset::AssetServer)
-//! and will yield a [`TextureAtlas`](::bevy::sprite::TextureAtlas) [`Handle`](::bevy::asset::Handle).
-//!
-//! ### `spritesheet.titan`
-//! ```rust,ignore
-//! SpriteSheetManifest ( /* The explicit type name can be omitted */
-//!     path: String, /* path to spritesheet image asset */
-//!     tile_size: (
-//!         w: f32,
-//!         h: f32,
-//!     ),
-//!     columns: usize,
-//!     rows: usize,
-//!    // These can be optionally defined
-//!    /*
-//!    padding: (
-//!        h: f32,
-//!        w: f32,
-//!    ),
-//!    offset: (
-//!        h: f32,
-//!        w: f32,
-//!    ),
-//!    */
-//! )
-//! ```
+//! `bevy_trickfilm::animation` introduces a [`SpriteSheetAnimationPlayer`](crate::animation::SpriteSheetAnimationPlayer) component.
+//! The component supports playing and stopping animations.
 //!
 //! ```edition2021
-//! # use bevy_titan::SpriteSheetLoaderPlugin;
+//! # use bevy_trickfilm::prelude::*;
 //! # use bevy::prelude::*;
 //! #
-//! fn main() {
-//!     App::new()
-//!         .add_plugins(DefaultPlugins)
-//!         .add_plugin(SpriteSheetLoaderPlugin)
-//!         .add_system(load_spritesheet)
-//!         .run();
-//! }
+//! ...
 //!
-//! fn load_spritesheet(mut commands: Commands, asset_server: Res<AssetServer>) {
-//!     let texture_atlas_handle = asset_server.load("spritesheet.titan");
-//!     commands.spawn(Camera2dBundle::default());
-//!     commands.spawn(
-//!         SpriteSheetBundle {
-//!              texture_atlas: texture_atlas_handle,
-//!              transform: Transform::from_scale(Vec3::splat(6.0)),
-//!              ..default()
+//! fn kick(mut animation_players: Query<&mut SpriteSheetAnimationPlayer, With<Controlled>>, keys: Res<Input<KeyCode>>) {
+//!     if keys.just_pressed(KeyCode::Space) {
+//!         for mut animation_player in &mut animation_players {
+//!             animation_player.play(String::from("kick"));
 //!         }
-//!     );
+//!     }
 //! }
 //!
 //! ```
 
 use crate::asset_loader::SpriteSheetAnimationSet;
 use bevy::{
-    prelude::{default, Assets, Changed, Component, Handle, Query, Res},
+    prelude::{
+        default, App, Assets, Changed, Component, Handle, IntoSystemDescriptor, Plugin, Query, Res,
+    },
     sprite::{TextureAtlas, TextureAtlasSprite},
     time::{Time, Timer, TimerMode},
 };
 
-pub(crate) fn animate_sprite(
+/// Adds support for spritesheet animation playing.
+pub struct SpriteSheetAnimationPlayerPlugin;
+
+impl Plugin for SpriteSheetAnimationPlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(animation_update_internal)
+            .add_system(animate_sprite.after(animation_update_internal));
+    }
+}
+
+/// Updates animation player and forwards changes of the frame to the TextureAtlasSprite component.
+fn animate_sprite(
     time: Res<Time>,
     spritesheet_animationsets: Res<Assets<SpriteSheetAnimationSet>>,
     mut query: Query<(&mut SpriteSheetAnimationPlayer, &mut TextureAtlasSprite)>,
@@ -84,21 +62,26 @@ pub(crate) fn animate_sprite(
                 // Update player index
                 let repeating = spritesheet_animation.repeating;
                 let len = spritesheet_animation.indices.len();
-                player.index = if repeating {
+                let new_index = if repeating {
                     (player.index + 1) % len
                 } else {
-                    // TODO: If we are at the end here we can disable the timer
                     (player.index + 1).max(len - 1)
                 };
 
-                // Update texture atlas index
-                sprite.index = spritesheet_animation.indices[player.index];
+                if player.index != new_index {
+                    player.index = new_index;
+                    // Update texture atlas index
+                    sprite.index = spritesheet_animation.indices[player.index];
+                } else {
+                    player.stop();
+                }
             }
         }
     }
 }
 
-pub(crate) fn animation_update_internal(
+/// Updates animation player internal state when chaning animation.
+fn animation_update_internal(
     spritesheet_animationsets: Res<Assets<SpriteSheetAnimationSet>>,
     mut query: Query<
         (&mut SpriteSheetAnimationPlayer, &mut Handle<TextureAtlas>),
@@ -130,6 +113,10 @@ pub(crate) fn animation_update_internal(
     }
 }
 
+/* TODO: Introduce Resource to handle stopping any animation updates/ticking + a way to override it per component */
+/* TODO: Return Error from play animation */
+
+/// Component to handle playing animations.
 #[derive(Debug, Component)]
 pub struct SpriteSheetAnimationPlayer {
     animationset_handle: Handle<SpriteSheetAnimationSet>,
@@ -152,6 +139,7 @@ impl Default for SpriteSheetAnimationPlayer {
 }
 
 impl SpriteSheetAnimationPlayer {
+    /// Creates a new SpriteSheetAnimationPlayer from a SpriteSheetAnimationSet asset.
     pub fn new(animationset_handle: Handle<SpriteSheetAnimationSet>) -> Self {
         Self {
             animationset_handle,
@@ -159,6 +147,8 @@ impl SpriteSheetAnimationPlayer {
         }
     }
 
+    /// Creates a new SpriteSheetAnimationPlayer from a SpriteSheetAnimationSet asset.
+    /// Will immediately start playing the given animation.
     pub fn with_animation(self, animation: String) -> Self {
         Self {
             state: SpriteSheetAnimationPlayerState::Playing(animation),
@@ -166,6 +156,7 @@ impl SpriteSheetAnimationPlayer {
         }
     }
 
+    /// Plays the given animation.
     pub fn play(&mut self, name: String) {
         self.state = SpriteSheetAnimationPlayerState::Playing(name);
         self.index = usize::default();
@@ -173,6 +164,12 @@ impl SpriteSheetAnimationPlayer {
         self.update_internal = true;
     }
 
+    /// Stops the currently playing animation.
+    pub fn stop(&mut self) {
+        self.state = SpriteSheetAnimationPlayerState::Stopped;
+    }
+
+    /// If there is currently an animation playing, returns the name of the animation.
     pub fn animation(&self) -> Option<&str> {
         match &self.state {
             SpriteSheetAnimationPlayerState::Playing(animation) => Some(animation),
@@ -180,14 +177,18 @@ impl SpriteSheetAnimationPlayer {
         }
     }
 
+    /// Returns the current animation state of the animation player.
     pub fn state(&self) -> &SpriteSheetAnimationPlayerState {
         &self.state
     }
 }
 
+/// Animation state of the animation player.
 #[derive(Debug, Default)]
 pub enum SpriteSheetAnimationPlayerState {
+    /// The animation with the given name is playing.
     Playing(String),
     #[default]
+    /// No animation is currently playing.
     Stopped,
 }

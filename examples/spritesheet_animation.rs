@@ -4,13 +4,13 @@
 
 use bevy::prelude::*;
 use bevy_titan::SpriteSheetLoaderPlugin;
-use bevy_trickfilm::{animation::SpriteSheetAnimationPlayer, SpriteSheetAnimationLoaderPlugin};
+use bevy_trickfilm::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugin(SpriteSheetLoaderPlugin)
-        .add_plugin(SpriteSheetAnimationLoaderPlugin)
+        .add_plugin(SpriteSheetAnimationPlugin)
         .add_startup_system(setup)
         .run();
 }
@@ -24,6 +24,6 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         },
         SpriteSheetAnimationPlayer::new(spritesheet_animationset_handle)
-            .with_animation(String::from("run").into()),
+            .with_animation(String::from("run")),
     ));
 }

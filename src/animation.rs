@@ -19,6 +19,8 @@
 //!
 //! ```
 
+use std::time::Duration;
+
 use crate::asset_loader::SpriteSheetAnimationSet;
 use bevy::{
     prelude::{
@@ -57,7 +59,8 @@ fn animate_sprite(
             let spritesheet_animation = animationset.animations.get(animation).unwrap();
 
             // Advance timer
-            player.timer.tick(time.delta());
+            let speed = player.speed;
+            player.timer.tick(time.delta().mul_f32(speed));
             if player.timer.just_finished() {
                 // Update player index
                 let repeating = spritesheet_animation.repeating;
@@ -122,6 +125,7 @@ pub struct SpriteSheetAnimationPlayer {
     animationset_handle: Handle<SpriteSheetAnimationSet>,
     state: SpriteSheetAnimationPlayerState,
     index: usize,
+    speed: f32,
     timer: Timer,
     update_internal: bool,
 }
@@ -133,6 +137,7 @@ impl Default for SpriteSheetAnimationPlayer {
             state: Default::default(),
             index: Default::default(),
             timer: Default::default(),
+            speed: 1.0,
             update_internal: true,
         }
     }
@@ -181,6 +186,17 @@ impl SpriteSheetAnimationPlayer {
     pub fn state(&self) -> &SpriteSheetAnimationPlayerState {
         &self.state
     }
+
+    /// Returns the current animation speed of the animation player.
+    pub fn speed(&self) -> f32 {
+        self.speed
+    }
+
+    /// Change the current animation speed of the animation player.
+    pub fn set_speed(&mut self, speed: f32) {
+        self.speed = speed;
+    } 
+
 }
 
 /// Animation state of the animation player.

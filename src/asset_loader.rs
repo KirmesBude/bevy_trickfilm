@@ -61,7 +61,7 @@ use bevy::{
     utils::{BoxedFuture, HashMap, HashSet},
 };
 use serde::Deserialize;
-use std::path::PathBuf;
+use std::{path::PathBuf, ops::Range};
 
 /// Adds support for spritesheet animation manifest files loading to the app.
 pub struct SpriteSheetAnimationLoaderPlugin;
@@ -108,7 +108,10 @@ impl AssetLoader for SpriteSheetAnimationLoader {
                     texture_atlas_handle,
                     repeating: spritesheet_animation_manifest.repeating,
                     fps: spritesheet_animation_manifest.fps,
-                    indices: spritesheet_animation_manifest.indices,
+                    indices: match spritesheet_animation_manifest.indices {
+                        AnimationFrameIndices::IndexVec(vec) => vec,
+                        AnimationFrameIndices::IndexRange(range) => range.collect(),
+                    },
                 };
                 spritesheet_animationset
                     .animations
@@ -128,6 +131,15 @@ impl AssetLoader for SpriteSheetAnimationLoader {
     fn extensions(&self) -> &[&str] {
         FILE_EXTENSIONS
     }
+}
+
+/// Declaration of the deserialized variant for the animation frame indices.
+#[derive(Debug, Deserialize)]
+pub enum AnimationFrameIndices {
+    /// You can specify the index of each frame seperately.
+    IndexVec(Vec<usize>),
+    /// Use this, if the animation frames of an animation have continuous indices.
+    IndexRange(Range<usize>),
 }
 
 /// Declaration of the deserialized struct from the spritesheet manifest file written in ron.
@@ -150,7 +162,7 @@ pub struct SpriteSheetAnimationManifest {
     /// Animation speed in frames per second.
     pub fps: usize,
     /// An ordered list of incides of the TextureAtlas that represent the frames of this animation.
-    pub indices: Vec<usize>,
+    pub indices: AnimationFrameIndices,
 }
 
 /// Declaration of the deserialized struct from the spritesheet manifest file written in ron.

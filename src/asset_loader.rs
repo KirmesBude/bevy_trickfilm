@@ -61,7 +61,7 @@ use bevy::{
     utils::{BoxedFuture, HashMap, HashSet},
 };
 use serde::Deserialize;
-use std::{path::PathBuf, ops::Range};
+use std::{ops::Range, path::PathBuf};
 
 /// Adds support for spritesheet animation manifest files loading to the app.
 pub struct SpriteSheetAnimationLoaderPlugin;

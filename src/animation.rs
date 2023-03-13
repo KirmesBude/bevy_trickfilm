@@ -19,8 +19,6 @@
 //!
 //! ```
 
-use std::time::Duration;
-
 use crate::asset_loader::SpriteSheetAnimationSet;
 use bevy::{
     prelude::{
@@ -47,8 +45,10 @@ fn animate_sprite(
     mut query: Query<(&mut SpriteSheetAnimationPlayer, &mut TextureAtlasSprite)>,
 ) {
     for (mut player, mut sprite) in &mut query {
-        if let SpriteSheetAnimationPlayerState::Stopped = player.state() {
-            continue;
+        match player.state {
+            SpriteSheetAnimationPlayerState::Stopped
+            | SpriteSheetAnimationPlayerState::Paused(_) => continue,
+            _ => {}
         }
 
         // Get active animation
@@ -174,10 +174,11 @@ impl SpriteSheetAnimationPlayer {
         self.state = SpriteSheetAnimationPlayerState::Stopped;
     }
 
-    /// If there is currently an animation playing, returns the name of the animation.
+    /// If there is currently an animation playing or paused, returns the name of the animation.
     pub fn animation(&self) -> Option<&str> {
         match &self.state {
-            SpriteSheetAnimationPlayerState::Playing(animation) => Some(animation),
+            SpriteSheetAnimationPlayerState::Playing(animation)
+            | SpriteSheetAnimationPlayerState::Paused(animation) => Some(animation),
             SpriteSheetAnimationPlayerState::Stopped => None,
         }
     }
@@ -195,8 +196,21 @@ impl SpriteSheetAnimationPlayer {
     /// Change the current animation speed of the animation player.
     pub fn set_speed(&mut self, speed: f32) {
         self.speed = speed;
-    } 
+    }
 
+    /// Pauses the current animation. If there is no animation playing, does nothing.
+    pub fn pause(&mut self) {
+        if let SpriteSheetAnimationPlayerState::Playing(animation) = &self.state {
+            self.state = SpriteSheetAnimationPlayerState::Paused(animation.to_owned())
+        }
+    }
+
+    /// Pauses the current animation. If there is no animation playing, does nothing.
+    pub fn resume(&mut self) {
+        if let SpriteSheetAnimationPlayerState::Paused(animation) = &self.state {
+            self.state = SpriteSheetAnimationPlayerState::Playing(animation.to_owned())
+        }
+    }
 }
 
 /// Animation state of the animation player.
@@ -207,4 +221,6 @@ pub enum SpriteSheetAnimationPlayerState {
     #[default]
     /// No animation is currently playing.
     Stopped,
+    /// The animation with the given name is paused.
+    Paused(String),
 }

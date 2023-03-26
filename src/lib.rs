@@ -89,7 +89,7 @@ impl Plugin for SpriteSheetAnimationPlugin {
 pub mod prelude {
     pub use crate::animation::{SpriteSheetAnimationPlayer, SpriteSheetAnimationPlayerPlugin};
     pub use crate::asset_loader::{
-        SpriteSheetAnimation, SpriteSheetAnimationLoaderPlugin, SpriteSheetAnimationSet,
+        SpriteSheetAnimationClip, SpriteSheetAnimationLoaderPlugin, SpriteSheetAnimationSet,
     };
     pub use crate::SpriteSheetAnimationPlugin;
 }

@@ -56,9 +56,9 @@
 use bevy::{
     asset::{AssetLoader, AssetPath, LoadContext, LoadedAsset},
     prelude::{AddAsset, App, Handle, Plugin},
-    reflect::TypeUuid,
+    reflect::{FromReflect, Reflect, TypeUuid},
     sprite::TextureAtlas,
-    utils::{BoxedFuture, HashMap, HashSet},
+    utils::{BoxedFuture, HashMap},
 };
 use serde::Deserialize;
 use std::{ops::Range, path::PathBuf};
@@ -68,7 +68,8 @@ pub struct SpriteSheetAnimationLoaderPlugin;
 
 impl Plugin for SpriteSheetAnimationLoaderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_asset::<SpriteSheetAnimationSet>()
+        app.add_asset::<SpriteSheetAnimationClip>()
+            .add_asset::<SpriteSheetAnimationSet>()
             .init_asset_loader::<SpriteSheetAnimationLoader>();
     }
 }
@@ -94,17 +95,14 @@ impl AssetLoader for SpriteSheetAnimationLoader {
                 name: spritesheet_animationset_manifest.name,
                 ..Default::default()
             };
-            let mut dependencies = HashSet::new();
             for (animation_name, spritesheet_animation_manifest) in
                 spritesheet_animationset_manifest.animations
             {
                 let spritesheet_animation_asset_path =
                     AssetPath::new(PathBuf::from(&spritesheet_animation_manifest.path), None);
-                dependencies.insert(spritesheet_animation_asset_path.clone());
-
                 let texture_atlas_handle: Handle<TextureAtlas> =
                     load_context.get_handle(spritesheet_animation_asset_path.clone());
-                let spritesheet_animation = SpriteSheetAnimation {
+                let spritesheet_animation = SpriteSheetAnimationClip {
                     texture_atlas_handle,
                     repeating: spritesheet_animation_manifest.repeating,
                     fps: spritesheet_animation_manifest.fps,
@@ -113,15 +111,18 @@ impl AssetLoader for SpriteSheetAnimationLoader {
                         AnimationFrameIndices::IndexRange(range) => range.collect(),
                     },
                 };
+
+                let mut spritesheet_animationclip_asset = LoadedAsset::new(spritesheet_animation);
+                spritesheet_animationclip_asset.add_dependency(spritesheet_animation_asset_path);
+                let spritesheet_animationclip_handle = load_context
+                    .set_labeled_asset(&animation_name, spritesheet_animationclip_asset);
+
                 spritesheet_animationset
                     .animations
-                    .insert(animation_name, spritesheet_animation);
+                    .insert(animation_name, spritesheet_animationclip_handle);
             }
 
-            let mut spritesheet_animation_asset = LoadedAsset::new(spritesheet_animationset);
-            for dependency in dependencies {
-                spritesheet_animation_asset.add_dependency(dependency);
-            }
+            let spritesheet_animation_asset = LoadedAsset::new(spritesheet_animationset);
 
             load_context.set_default_asset(spritesheet_animation_asset);
             Ok(())
@@ -149,12 +150,12 @@ pub struct SpriteSheetAnimationSetManifest {
     #[serde(default)]
     pub name: Option<String>,
     /// A map of all animations in this set, identified by their names.
-    pub animations: HashMap<String, SpriteSheetAnimationManifest>,
+    pub animations: HashMap<String, SpriteSheetAnimationClipManifest>,
 }
 
 /// Declaration of the deserialized struct from the spritesheet manifest file written in ron.
 #[derive(Debug, Deserialize)]
-pub struct SpriteSheetAnimationManifest {
+pub struct SpriteSheetAnimationClipManifest {
     /// Path to a manifest files that loads a TextureAtlas that houses all frames of this animation.
     pub path: String,
     /// If set, the animation will loop.
@@ -172,13 +173,15 @@ pub struct SpriteSheetAnimationSet {
     /// Optional name of this animation set.
     pub name: Option<String>,
     /// A map of all animations in this set, identified by their names.
-    pub animations: HashMap<String, SpriteSheetAnimation>,
+    pub animations: HashMap<String, Handle<SpriteSheetAnimationClip>>,
 }
 
 /* TODO: Extend repeating to some kind of Mode, that supports Once, Repeating and PingPong */
 /// Declaration of the deserialized struct from the spritesheet manifest file written in ron.
-#[derive(Debug, Default)]
-pub struct SpriteSheetAnimation {
+#[derive(Reflect, FromReflect, Default, Debug, Clone, TypeUuid)]
+#[uuid = "9403342c-8c4e-495e-85ef-3e9cd12ffea5"]
+#[reflect(Debug)]
+pub struct SpriteSheetAnimationClip {
     /// The texture atlas that houses all frames of this animation.
     pub texture_atlas_handle: Handle<TextureAtlas>,
     /// If set, the animation will loop.

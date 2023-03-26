@@ -19,13 +19,15 @@
 //!
 //! ```
 
-use crate::asset_loader::SpriteSheetAnimationSet;
+use crate::prelude::SpriteSheetAnimationClip;
 use bevy::{
     prelude::{
-        default, App, Assets, Changed, Component, Handle, IntoSystemDescriptor, Plugin, Query, Res,
+        App, Assets, Changed, Component, DetectChanges, Handle, IntoSystemDescriptor, Mut, Plugin,
+        Query, ReflectComponent, Res,
     },
+    reflect::Reflect,
     sprite::{TextureAtlas, TextureAtlasSprite},
-    time::{Time, Timer, TimerMode},
+    time::Time,
 };
 
 /// Adds support for spritesheet animation playing.
@@ -34,193 +36,192 @@ pub struct SpriteSheetAnimationPlayerPlugin;
 impl Plugin for SpriteSheetAnimationPlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(animation_update_internal)
-            .add_system(animate_sprite.after(animation_update_internal));
+            .add_system(animation_player.after(animation_update_internal));
+    }
+}
+
+#[derive(Reflect)]
+struct SpriteSheetPlayingAnimation {
+    repeat: bool,
+    speed: f32,
+    elapsed: f32,
+    animation_clip: Handle<SpriteSheetAnimationClip>,
+}
+
+impl Default for SpriteSheetPlayingAnimation {
+    fn default() -> Self {
+        Self {
+            repeat: false,
+            speed: 1.0,
+            elapsed: 0.0,
+            animation_clip: Default::default(),
+        }
+    }
+}
+
+/// Animation controls
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
+pub struct SpriteSheetAnimationPlayer {
+    paused: bool,
+    animation: SpriteSheetPlayingAnimation,
+    update_internal: bool,
+}
+
+impl SpriteSheetAnimationPlayer {
+    /// Start playing an animation, resetting state of the player
+    pub fn start(&mut self, handle: Handle<SpriteSheetAnimationClip>) -> &mut Self {
+        self.animation = SpriteSheetPlayingAnimation {
+            animation_clip: handle,
+            ..Default::default()
+        };
+        self.update_internal = true;
+
+        self
+    }
+
+    /// Start playing an animation, resetting state of the player, unless the requested animation is already playing.
+    pub fn play(&mut self, handle: Handle<SpriteSheetAnimationClip>) -> &mut Self {
+        if self.animation.animation_clip != handle || self.is_paused() {
+            self.start(handle);
+        }
+        self
+    }
+
+    /// Set the animation to repeat
+    pub fn repeat(&mut self) -> &mut Self {
+        self.animation.repeat = true;
+        self
+    }
+
+    /// Stop the animation from repeating
+    pub fn stop_repeating(&mut self) -> &mut Self {
+        self.animation.repeat = false;
+        self
+    }
+
+    /// Pause the animation
+    pub fn pause(&mut self) {
+        self.paused = true;
+    }
+
+    /// Unpause the animation
+    pub fn resume(&mut self) {
+        self.paused = false;
+    }
+
+    /// Is the animation paused
+    pub fn is_paused(&self) -> bool {
+        self.paused
+    }
+
+    /// Speed of the animation playback
+    pub fn speed(&self) -> f32 {
+        self.animation.speed
+    }
+
+    /// Set the speed of the animation playback
+    pub fn set_speed(&mut self, speed: f32) -> &mut Self {
+        self.animation.speed = speed;
+        self
+    }
+
+    /// Time elapsed playing the animation
+    pub fn elapsed(&self) -> f32 {
+        self.animation.elapsed
+    }
+
+    /// Seek to a specific time in the animation
+    pub fn set_elapsed(&mut self, elapsed: f32) -> &mut Self {
+        self.animation.elapsed = elapsed;
+        self
     }
 }
 
 /// Updates animation player and forwards changes of the frame to the TextureAtlasSprite component.
-fn animate_sprite(
+fn animation_player(
     time: Res<Time>,
-    spritesheet_animationsets: Res<Assets<SpriteSheetAnimationSet>>,
+    spritesheet_animationclips: Res<Assets<SpriteSheetAnimationClip>>,
     mut query: Query<(&mut SpriteSheetAnimationPlayer, &mut TextureAtlasSprite)>,
 ) {
-    for (mut player, mut sprite) in &mut query {
-        match player.state {
-            SpriteSheetAnimationPlayerState::Stopped
-            | SpriteSheetAnimationPlayerState::Paused(_) => continue,
-            _ => {}
+    query.par_for_each_mut(32, |(player, sprite)| {
+        run_animation_player(&time, &spritesheet_animationclips, player, sprite);
+    });
+}
+
+/// Updates animation player and forwards changes of the frame to the TextureAtlasSprite component.
+fn run_animation_player(
+    time: &Time,
+    spritesheet_animationclips: &Assets<SpriteSheetAnimationClip>,
+    mut player: Mut<SpriteSheetAnimationPlayer>,
+    mut sprite: Mut<TextureAtlasSprite>,
+) {
+    let paused = player.paused;
+    if paused && !player.is_changed() {
+        // Allows manual update of elapsed when paused
+        return;
+    }
+
+    apply_animation_player(
+        time,
+        spritesheet_animationclips,
+        &mut player.animation,
+        paused,
+        &mut sprite.index,
+    );
+}
+
+/// Updates animation player and forwards changes of the frame to the TextureAtlasSprite component.
+fn apply_animation_player(
+    time: &Time,
+    spritesheet_animationclips: &Assets<SpriteSheetAnimationClip>,
+    animation: &mut SpriteSheetPlayingAnimation,
+    paused: bool,
+    sprite_index: &mut usize,
+) {
+    if let Some(animation_clip) = spritesheet_animationclips.get(&animation.animation_clip) {
+        // Advance timer
+        if !paused {
+            animation.elapsed += time.delta_seconds() * animation.speed;
+        }
+        let animation_clip_duration =
+            (animation_clip.indices.len() as f32) / (animation_clip.fps as f32);
+        let mut elapsed = animation.elapsed;
+        if animation.repeat {
+            elapsed %= animation_clip_duration;
+        }
+        if elapsed < 0.0 {
+            elapsed += animation_clip_duration;
         }
 
-        // Get active animation
-        if let Some(animation) = player.animation() {
-            // Get AnimationSet
-            let animationset_handle = player.animationset_handle.clone();
-            let animationset = spritesheet_animationsets.get(&animationset_handle).unwrap();
-            let spritesheet_animation = animationset.animations.get(animation).unwrap();
-
-            // Advance timer
-            let speed = player.speed;
-            player.timer.tick(time.delta().mul_f32(speed));
-            if player.timer.just_finished() {
-                // Update player index
-                let repeating = spritesheet_animation.repeating;
-                let len = spritesheet_animation.indices.len();
-                let new_index = if repeating {
-                    (player.index + 1) % len
-                } else {
-                    (player.index + 1).max(len - 1)
-                };
-
-                if player.index != new_index {
-                    player.index = new_index;
-                    // Update texture atlas index
-                    sprite.index = spritesheet_animation.indices[player.index];
-                } else {
-                    player.stop();
-                }
-            }
-        }
+        let index = (elapsed * (animation_clip.fps as f32)).trunc() as usize;
+        let index = index.min(animation_clip.indices.len() - 1); // TODO: Ensure that AnimationClips are never empty
+        let index = animation_clip.indices[index];
+        *sprite_index = index;
     }
 }
 
 /// Updates animation player internal state when chaning animation.
 fn animation_update_internal(
-    spritesheet_animationsets: Res<Assets<SpriteSheetAnimationSet>>,
+    spritesheet_animationclips: Res<Assets<SpriteSheetAnimationClip>>,
     mut query: Query<
         (&mut SpriteSheetAnimationPlayer, &mut Handle<TextureAtlas>),
         Changed<SpriteSheetAnimationPlayer>,
     >,
 ) {
     for (mut player, mut texture_atlas_handle) in &mut query {
-        if let Some(spritesheet_animationset) =
-            spritesheet_animationsets.get(&player.animationset_handle)
+        if let Some(spritesheet_animationclip) =
+            spritesheet_animationclips.get(&player.animation.animation_clip)
         {
-            if let Some(animation) = player.animation() {
-                if player.update_internal {
-                    // Get TextureAtlas and update handle
-                    let animation = spritesheet_animationset.animations.get(animation).unwrap();
-                    let animation_texture_atlas_handle = animation.texture_atlas_handle.clone();
-                    *texture_atlas_handle = animation_texture_atlas_handle;
+            if player.update_internal {
+                // Get TextureAtlas and update handle
+                let animation_texture_atlas_handle =
+                    spritesheet_animationclip.texture_atlas_handle.clone();
+                *texture_atlas_handle = animation_texture_atlas_handle;
 
-                    // Set up timer
-                    let fps = animation.fps as f32;
-                    let duration = 1.0 / fps;
-                    let mode = TimerMode::Repeating;
-                    player.timer = Timer::from_seconds(duration, mode);
-
-                    // Reset dirty flag
-                    player.update_internal = false;
-                }
+                // Reset dirty flag
+                player.update_internal = false;
             }
         }
     }
-}
-
-/* TODO: Introduce Resource to handle stopping any animation updates/ticking + a way to override it per component */
-/* TODO: Return Error from play animation */
-
-/// Component to handle playing animations.
-#[derive(Debug, Component)]
-pub struct SpriteSheetAnimationPlayer {
-    animationset_handle: Handle<SpriteSheetAnimationSet>,
-    state: SpriteSheetAnimationPlayerState,
-    index: usize,
-    speed: f32,
-    timer: Timer,
-    update_internal: bool,
-}
-
-impl Default for SpriteSheetAnimationPlayer {
-    fn default() -> Self {
-        Self {
-            animationset_handle: Default::default(),
-            state: Default::default(),
-            index: Default::default(),
-            timer: Default::default(),
-            speed: 1.0,
-            update_internal: true,
-        }
-    }
-}
-
-impl SpriteSheetAnimationPlayer {
-    /// Creates a new SpriteSheetAnimationPlayer from a SpriteSheetAnimationSet asset.
-    pub fn new(animationset_handle: Handle<SpriteSheetAnimationSet>) -> Self {
-        Self {
-            animationset_handle,
-            ..default()
-        }
-    }
-
-    /// Creates a new SpriteSheetAnimationPlayer from a SpriteSheetAnimationSet asset.
-    /// Will immediately start playing the given animation.
-    pub fn with_animation(self, animation: String) -> Self {
-        Self {
-            state: SpriteSheetAnimationPlayerState::Playing(animation),
-            ..self
-        }
-    }
-
-    /// Plays the given animation.
-    pub fn play(&mut self, name: String) {
-        self.state = SpriteSheetAnimationPlayerState::Playing(name);
-        self.index = usize::default();
-        self.timer = Timer::default();
-        self.update_internal = true;
-    }
-
-    /// Stops the currently playing animation.
-    pub fn stop(&mut self) {
-        self.state = SpriteSheetAnimationPlayerState::Stopped;
-    }
-
-    /// If there is currently an animation playing or paused, returns the name of the animation.
-    pub fn animation(&self) -> Option<&str> {
-        match &self.state {
-            SpriteSheetAnimationPlayerState::Playing(animation)
-            | SpriteSheetAnimationPlayerState::Paused(animation) => Some(animation),
-            SpriteSheetAnimationPlayerState::Stopped => None,
-        }
-    }
-
-    /// Returns the current animation state of the animation player.
-    pub fn state(&self) -> &SpriteSheetAnimationPlayerState {
-        &self.state
-    }
-
-    /// Returns the current animation speed of the animation player.
-    pub fn speed(&self) -> f32 {
-        self.speed
-    }
-
-    /// Change the current animation speed of the animation player.
-    pub fn set_speed(&mut self, speed: f32) {
-        self.speed = speed;
-    }
-
-    /// Pauses the current animation. If there is no animation playing, does nothing.
-    pub fn pause(&mut self) {
-        if let SpriteSheetAnimationPlayerState::Playing(animation) = &self.state {
-            self.state = SpriteSheetAnimationPlayerState::Paused(animation.to_owned())
-        }
-    }
-
-    /// Pauses the current animation. If there is no animation playing, does nothing.
-    pub fn resume(&mut self) {
-        if let SpriteSheetAnimationPlayerState::Paused(animation) = &self.state {
-            self.state = SpriteSheetAnimationPlayerState::Playing(animation.to_owned())
-        }
-    }
-}
-
-/// Animation state of the animation player.
-#[derive(Debug, Default)]
-pub enum SpriteSheetAnimationPlayerState {
-    /// The animation with the given name is playing.
-    Playing(String),
-    #[default]
-    /// No animation is currently playing.
-    Stopped,
-    /// The animation with the given name is paused.
-    Paused(String),
 }

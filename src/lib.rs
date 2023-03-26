@@ -73,23 +73,21 @@
 use bevy::prelude::{App, Plugin};
 
 pub mod animation;
-pub mod asset_loader;
+pub mod assets;
 
 /// Adds support for spritesheet animation loading and playing.
 pub struct SpriteSheetAnimationPlugin;
 
 impl Plugin for SpriteSheetAnimationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(asset_loader::SpriteSheetAnimationLoaderPlugin)
-            .add_plugin(animation::SpriteSheetAnimationPlayerPlugin);
+        app.add_plugin(assets::Animation2DLoaderPlugin)
+            .add_plugin(animation::AnimationPlayer2DPlugin);
     }
 }
 
 /// `use bevy_trickfilm::prelude::*;` to import common components and plugins.
 pub mod prelude {
-    pub use crate::animation::{SpriteSheetAnimationPlayer, SpriteSheetAnimationPlayerPlugin};
-    pub use crate::asset_loader::{
-        SpriteSheetAnimationClip, SpriteSheetAnimationLoaderPlugin, SpriteSheetAnimationSet,
-    };
+    pub use crate::animation::{AnimationPlayer2D, AnimationPlayer2DPlugin};
+    pub use crate::assets::{Animation2DLoaderPlugin, AnimationClip2D, AnimationClipSet2D};
     pub use crate::SpriteSheetAnimationPlugin;
 }

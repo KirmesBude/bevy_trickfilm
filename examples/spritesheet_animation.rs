@@ -19,7 +19,7 @@ fn main() {
 }
 
 #[derive(Resource)]
-struct Animations(Vec<Handle<SpriteSheetAnimationClip>>);
+struct Animations(Vec<Handle<AnimationClip2D>>);
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(Animations(vec![
@@ -32,13 +32,13 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             transform: Transform::from_scale(Vec3::splat(6.0)),
             ..default()
         })
-        .insert(SpriteSheetAnimationPlayer::default());
+        .insert(AnimationPlayer2D::default());
 }
 
 // Once the scene is loaded, start the animation
 fn setup_scene_once_loaded(
     animations: Res<Animations>,
-    mut player: Query<&mut SpriteSheetAnimationPlayer>,
+    mut player: Query<&mut AnimationPlayer2D>,
     mut done: Local<bool>,
 ) {
     if !*done {
@@ -51,7 +51,7 @@ fn setup_scene_once_loaded(
 
 fn keyboard_animation_control(
     keyboard_input: Res<Input<KeyCode>>,
-    mut animation_player: Query<&mut SpriteSheetAnimationPlayer>,
+    mut animation_player: Query<&mut AnimationPlayer2D>,
     animations: Res<Animations>,
     mut current_animation: Local<usize>,
 ) {

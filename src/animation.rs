@@ -19,7 +19,7 @@
 //!
 //! ```
 
-use crate::prelude::SpriteSheetAnimationClip;
+use crate::{assets::Keyframes2D, prelude::AnimationClip2D};
 use bevy::{
     prelude::{
         App, Assets, Changed, Component, DetectChanges, Handle, IntoSystemDescriptor, Mut, Plugin,
@@ -31,9 +31,9 @@ use bevy::{
 };
 
 /// Adds support for spritesheet animation playing.
-pub struct SpriteSheetAnimationPlayerPlugin;
+pub struct AnimationPlayer2DPlugin;
 
-impl Plugin for SpriteSheetAnimationPlayerPlugin {
+impl Plugin for AnimationPlayer2DPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(animation_update_internal)
             .add_system(animation_player.after(animation_update_internal));
@@ -41,14 +41,14 @@ impl Plugin for SpriteSheetAnimationPlayerPlugin {
 }
 
 #[derive(Reflect)]
-struct SpriteSheetPlayingAnimation {
+struct PlayingAnimation2D {
     repeat: bool,
     speed: f32,
     elapsed: f32,
-    animation_clip: Handle<SpriteSheetAnimationClip>,
+    animation_clip: Handle<AnimationClip2D>,
 }
 
-impl Default for SpriteSheetPlayingAnimation {
+impl Default for PlayingAnimation2D {
     fn default() -> Self {
         Self {
             repeat: false,
@@ -62,16 +62,16 @@ impl Default for SpriteSheetPlayingAnimation {
 /// Animation controls
 #[derive(Component, Default, Reflect)]
 #[reflect(Component)]
-pub struct SpriteSheetAnimationPlayer {
+pub struct AnimationPlayer2D {
     paused: bool,
-    animation: SpriteSheetPlayingAnimation,
+    animation: PlayingAnimation2D,
     update_internal: bool,
 }
 
-impl SpriteSheetAnimationPlayer {
+impl AnimationPlayer2D {
     /// Start playing an animation, resetting state of the player
-    pub fn start(&mut self, handle: Handle<SpriteSheetAnimationClip>) -> &mut Self {
-        self.animation = SpriteSheetPlayingAnimation {
+    pub fn start(&mut self, handle: Handle<AnimationClip2D>) -> &mut Self {
+        self.animation = PlayingAnimation2D {
             animation_clip: handle,
             ..Default::default()
         };
@@ -81,7 +81,7 @@ impl SpriteSheetAnimationPlayer {
     }
 
     /// Start playing an animation, resetting state of the player, unless the requested animation is already playing.
-    pub fn play(&mut self, handle: Handle<SpriteSheetAnimationClip>) -> &mut Self {
+    pub fn play(&mut self, handle: Handle<AnimationClip2D>) -> &mut Self {
         if self.animation.animation_clip != handle || self.is_paused() {
             self.start(handle);
         }
@@ -138,11 +138,12 @@ impl SpriteSheetAnimationPlayer {
     }
 }
 
+// TODO: Actual support the playback of sprite animations
 /// Updates animation player and forwards changes of the frame to the TextureAtlasSprite component.
 fn animation_player(
     time: Res<Time>,
-    spritesheet_animationclips: Res<Assets<SpriteSheetAnimationClip>>,
-    mut query: Query<(&mut SpriteSheetAnimationPlayer, &mut TextureAtlasSprite)>,
+    spritesheet_animationclips: Res<Assets<AnimationClip2D>>,
+    mut query: Query<(&mut AnimationPlayer2D, &mut TextureAtlasSprite)>,
 ) {
     query.par_for_each_mut(32, |(player, sprite)| {
         run_animation_player(&time, &spritesheet_animationclips, player, sprite);
@@ -152,8 +153,8 @@ fn animation_player(
 /// Updates animation player and forwards changes of the frame to the TextureAtlasSprite component.
 fn run_animation_player(
     time: &Time,
-    spritesheet_animationclips: &Assets<SpriteSheetAnimationClip>,
-    mut player: Mut<SpriteSheetAnimationPlayer>,
+    spritesheet_animationclips: &Assets<AnimationClip2D>,
+    mut player: Mut<AnimationPlayer2D>,
     mut sprite: Mut<TextureAtlasSprite>,
 ) {
     let paused = player.paused;
@@ -174,50 +175,62 @@ fn run_animation_player(
 /// Updates animation player and forwards changes of the frame to the TextureAtlasSprite component.
 fn apply_animation_player(
     time: &Time,
-    spritesheet_animationclips: &Assets<SpriteSheetAnimationClip>,
-    animation: &mut SpriteSheetPlayingAnimation,
+    animation_clips: &Assets<AnimationClip2D>,
+    animation: &mut PlayingAnimation2D,
     paused: bool,
     sprite_index: &mut usize,
 ) {
-    if let Some(animation_clip) = spritesheet_animationclips.get(&animation.animation_clip) {
+    if let Some(animation_clip) = animation_clips.get(&animation.animation_clip) {
+        // TODO: figure out something better
+        if let Keyframes2D::Sprite(_) = animation_clip.keyframes {
+            panic!("Your are using an AnimationClip2D with sprite keyframes, but you are using a TextureAtlas");
+        }
+
         // Advance timer
         if !paused {
             animation.elapsed += time.delta_seconds() * animation.speed;
         }
-        let animation_clip_duration =
-            (animation_clip.indices.len() as f32) / (animation_clip.fps as f32);
+
         let mut elapsed = animation.elapsed;
         if animation.repeat {
-            elapsed %= animation_clip_duration;
+            elapsed %= animation_clip.duration;
         }
         if elapsed < 0.0 {
-            elapsed += animation_clip_duration;
+            elapsed += animation_clip.duration;
         }
 
-        let index = (elapsed * (animation_clip.fps as f32)).trunc() as usize;
-        let index = index.min(animation_clip.indices.len() - 1); // TODO: Ensure that AnimationClips are never empty
-        let index = animation_clip.indices[index];
-        *sprite_index = index;
+        let index = match animation_clip
+            .keyframe_timestamps
+            .binary_search_by(|probe| probe.partial_cmp(&elapsed).unwrap())
+        {
+            Ok(n) if n >= animation_clip.keyframe_timestamps.len() - 1 => return, // this clip is finished
+            Ok(i) => i,
+            Err(0) => return, // this clip isn't started yet
+            Err(n) if n > animation_clip.keyframe_timestamps.len() => return, // this clip is finished TODO: Would this not also skip the last keyframe for 3D?
+            Err(i) => i-1,
+        };
+
+        if let Keyframes2D::SpriteSheet(_, vec) = &animation_clip.keyframes {
+            *sprite_index = vec[index]
+        };
     }
 }
 
 /// Updates animation player internal state when chaning animation.
 fn animation_update_internal(
-    spritesheet_animationclips: Res<Assets<SpriteSheetAnimationClip>>,
+    animation_clips: Res<Assets<AnimationClip2D>>,
     mut query: Query<
-        (&mut SpriteSheetAnimationPlayer, &mut Handle<TextureAtlas>),
-        Changed<SpriteSheetAnimationPlayer>,
+        (&mut AnimationPlayer2D, &mut Handle<TextureAtlas>),
+        Changed<AnimationPlayer2D>,
     >,
 ) {
     for (mut player, mut texture_atlas_handle) in &mut query {
-        if let Some(spritesheet_animationclip) =
-            spritesheet_animationclips.get(&player.animation.animation_clip)
-        {
+        if let Some(animation_clip) = animation_clips.get(&player.animation.animation_clip) {
             if player.update_internal {
                 // Get TextureAtlas and update handle
-                let animation_texture_atlas_handle =
-                    spritesheet_animationclip.texture_atlas_handle.clone();
-                *texture_atlas_handle = animation_texture_atlas_handle;
+                if let Keyframes2D::SpriteSheet(handle, _) = &animation_clip.keyframes {
+                    *texture_atlas_handle = handle.clone_weak();
+                }
 
                 // Reset dirty flag
                 player.update_internal = false;

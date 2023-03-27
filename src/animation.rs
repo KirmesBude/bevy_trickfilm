@@ -22,8 +22,7 @@
 use crate::{assets::Keyframes2D, prelude::AnimationClip2D};
 use bevy::{
     prelude::{
-        App, Assets, Changed, Component, DetectChanges, Handle, IntoSystemDescriptor, Mut, Plugin,
-        Query, ReflectComponent, Res,
+        App, Assets, Component, DetectChanges, Handle, Mut, Plugin, Query, ReflectComponent, Res,
     },
     reflect::Reflect,
     sprite::{TextureAtlas, TextureAtlasSprite},
@@ -35,8 +34,7 @@ pub struct AnimationPlayer2DPlugin;
 
 impl Plugin for AnimationPlayer2DPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(animation_update_internal)
-            .add_system(animation_player.after(animation_update_internal));
+        app.add_system(animation_player);
     }
 }
 
@@ -65,7 +63,6 @@ impl Default for PlayingAnimation2D {
 pub struct AnimationPlayer2D {
     paused: bool,
     animation: PlayingAnimation2D,
-    update_internal: bool,
 }
 
 impl AnimationPlayer2D {
@@ -75,8 +72,6 @@ impl AnimationPlayer2D {
             animation_clip: handle,
             ..Default::default()
         };
-        self.update_internal = true;
-
         self
     }
 
@@ -143,10 +138,20 @@ impl AnimationPlayer2D {
 fn animation_player(
     time: Res<Time>,
     spritesheet_animationclips: Res<Assets<AnimationClip2D>>,
-    mut query: Query<(&mut AnimationPlayer2D, &mut TextureAtlasSprite)>,
+    mut query: Query<(
+        &mut AnimationPlayer2D,
+        &mut TextureAtlasSprite,
+        &mut Handle<TextureAtlas>,
+    )>,
 ) {
-    query.par_for_each_mut(32, |(player, sprite)| {
-        run_animation_player(&time, &spritesheet_animationclips, player, sprite);
+    query.par_for_each_mut(32, |(player, sprite, texture_atlas_handle)| {
+        run_animation_player(
+            &time,
+            &spritesheet_animationclips,
+            player,
+            sprite,
+            texture_atlas_handle,
+        );
     });
 }
 
@@ -156,6 +161,7 @@ fn run_animation_player(
     spritesheet_animationclips: &Assets<AnimationClip2D>,
     mut player: Mut<AnimationPlayer2D>,
     mut sprite: Mut<TextureAtlasSprite>,
+    texture_atlas_handle: Mut<Handle<TextureAtlas>>,
 ) {
     let paused = player.paused;
     if paused && !player.is_changed() {
@@ -169,6 +175,7 @@ fn run_animation_player(
         &mut player.animation,
         paused,
         &mut sprite.index,
+        texture_atlas_handle,
     );
 }
 
@@ -179,6 +186,7 @@ fn apply_animation_player(
     animation: &mut PlayingAnimation2D,
     paused: bool,
     sprite_index: &mut usize,
+    mut texture_atlas_handle: Mut<Handle<TextureAtlas>>,
 ) {
     if let Some(animation_clip) = animation_clips.get(&animation.animation_clip) {
         // TODO: figure out something better
@@ -207,34 +215,12 @@ fn apply_animation_player(
             Ok(i) => i,
             Err(0) => return, // this clip isn't started yet
             Err(n) if n > animation_clip.keyframe_timestamps.len() => return, // this clip is finished TODO: Would this not also skip the last keyframe for 3D?
-            Err(i) => i-1,
+            Err(i) => i - 1,
         };
 
-        if let Keyframes2D::SpriteSheet(_, vec) = &animation_clip.keyframes {
+        if let Keyframes2D::SpriteSheet(handle, vec) = &animation_clip.keyframes {
+            *texture_atlas_handle = handle.clone_weak();
             *sprite_index = vec[index]
         };
-    }
-}
-
-/// Updates animation player internal state when chaning animation.
-fn animation_update_internal(
-    animation_clips: Res<Assets<AnimationClip2D>>,
-    mut query: Query<
-        (&mut AnimationPlayer2D, &mut Handle<TextureAtlas>),
-        Changed<AnimationPlayer2D>,
-    >,
-) {
-    for (mut player, mut texture_atlas_handle) in &mut query {
-        if let Some(animation_clip) = animation_clips.get(&player.animation.animation_clip) {
-            if player.update_internal {
-                // Get TextureAtlas and update handle
-                if let Keyframes2D::SpriteSheet(handle, _) = &animation_clip.keyframes {
-                    *texture_atlas_handle = handle.clone_weak();
-                }
-
-                // Reset dirty flag
-                player.update_internal = false;
-            }
-        }
     }
 }

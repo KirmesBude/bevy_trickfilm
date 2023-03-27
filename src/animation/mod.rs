@@ -1,23 +1,5 @@
-//! This module handles playing animations from an ['SpriteSheetAnimationSet'](crate::asset_loader::SpriteSheetAnimationSet) Asset.
+//! This module handles playing animations from an ['AnimationClip2D'](crate::asset::AnimationClip2D) asset using the ['AnimationPlayer2D'](crate::animation::AnimationPlayer2D) component.
 //!
-//! `bevy_trickfilm::animation` introduces a [`SpriteSheetAnimationPlayer`](crate::animation::SpriteSheetAnimationPlayer) component.
-//! The component supports playing and stopping animations.
-//!
-//! ```edition2021
-//! # use bevy_trickfilm::prelude::*;
-//! # use bevy::prelude::*;
-//! #
-//! ...
-//!
-//! fn kick(mut animation_players: Query<&mut SpriteSheetAnimationPlayer, With<Controlled>>, keys: Res<Input<KeyCode>>) {
-//!     if keys.just_pressed(KeyCode::Space) {
-//!         for mut animation_player in &mut animation_players {
-//!             animation_player.play(String::from("kick"));
-//!         }
-//!     }
-//! }
-//!
-//! ```
 
 mod animation_sprite;
 mod animation_spritesheet;

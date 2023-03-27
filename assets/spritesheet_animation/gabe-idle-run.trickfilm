@@ -1,8 +1,18 @@
-(
-    animations: {
+(                                    
+   animations: {
+        "idle": (
+            keyframe_timestamps: Some([0]),
+            keyframes: SpriteSheet(
+                "spritesheet_animation/gabe-idle-run.titan",
+                IndexVec(
+                    [0]
+                ),
+            ),
+            duration: 0.1,
+        ),
         "run": (
             keyframe_timestamps: None,
-            keyframes: SpriteSheet(
+            keyframes: SpriteSheet(     
                 "spritesheet_animation/gabe-idle-run.titan",
                 IndexRange(
                     (start: 1, end: 7)
@@ -10,5 +20,5 @@
             ),
             duration: 0.6,
         ),
-    },
+   },
 )

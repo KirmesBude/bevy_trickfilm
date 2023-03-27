@@ -1,4 +1,4 @@
-//! This module defines all Assets SpriteSheetAnimationSet from a manifest file.
+//! This module defines all assets for 2D Animations.
 //!
 
 use bevy::{
@@ -23,12 +23,12 @@ impl Plugin for Animation2DLoaderPlugin {
     }
 }
 
-/// Declaration of the deserialized variant for the animation keyframes.
+/// Keyframes for a 2D animation.
 #[derive(Debug, Clone)]
 pub enum Keyframes2D {
-    /// For Spritesheet animations
+    /// For SpriteSheet animations.
     SpriteSheet(Handle<TextureAtlas>, Vec<usize>),
-    /// For Sprite animations
+    /// For Sprite animations.
     Sprite(Vec<Handle<Image>>),
 }
 
@@ -38,7 +38,7 @@ impl Default for Keyframes2D {
     }
 }
 
-/// Declaration of the deserialized struct from the spritesheet manifest file written in ron.
+/// AnimationClip for a 2D animation.
 #[derive(Default, Debug, Clone, TypeUuid)]
 #[uuid = "9403342c-8c4e-495e-85ef-3e9cd12ffea5"]
 pub struct AnimationClip2D {
@@ -50,7 +50,7 @@ pub struct AnimationClip2D {
     pub duration: f32,
 }
 
-/// Declaration of the deserialized struct from the spritesheet manifest file written in ron.
+/// AnimationClipSet for a 2D animation.
 #[derive(Default, Debug, Clone, TypeUuid)]
 #[uuid = "ec942212-87dc-4ee4-8300-1e160a389c37"]
 pub struct AnimationClipSet2D {

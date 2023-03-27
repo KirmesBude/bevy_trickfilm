@@ -4,7 +4,7 @@ use bevy::{
     time::Time,
 };
 
-use crate::assets::{AnimationClip2D, Keyframes2D};
+use crate::asset::{AnimationClip2D, Keyframes2D};
 
 use super::{AnimationPlayer2D, PlayingAnimation2D};
 

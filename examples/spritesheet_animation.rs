@@ -11,7 +11,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugin(SpriteSheetLoaderPlugin)
-        .add_plugin(SpriteSheetAnimationPlugin)
+        .add_plugin(Animation2DPlugin)
         .add_startup_system(setup)
         .add_system(setup_scene_once_loaded)
         .add_system(keyboard_animation_control)
@@ -23,7 +23,8 @@ struct Animations(Vec<Handle<AnimationClip2D>>);
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(Animations(vec![
-        asset_server.load("spritesheet_animation/gabe-idle-run.trickfilm#run")
+        asset_server.load("spritesheet_animation/gabe-idle-run.trickfilm#idle"),
+        asset_server.load("spritesheet_animation/gabe-idle-run.trickfilm#run"),
     ]));
 
     commands.spawn(Camera2dBundle::default());
@@ -43,7 +44,7 @@ fn setup_scene_once_loaded(
 ) {
     if !*done {
         if let Ok(mut player) = player.get_single_mut() {
-            player.play(animations.0[0].clone_weak()).repeat();
+            player.play(animations.0[1].clone_weak()).repeat();
             *done = true;
         }
     }

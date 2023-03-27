@@ -1,27 +1,35 @@
-//! This crate allows you to directly load a SpriteSheetAnimationSet from a manifest file and play animations.
+//! This crate allows you to directly load an [`AnimationClipSet2D`](crate::asset::AnimationClipSet2D) and/or [`AnimationClip2D`](crate::asset::AnimationClip2D) from a manifest file and play animations.
 //!
-//! `bevy_trickfilm` introduces a [`SpriteSheetAnimationSetManifest`](crate::asset_loader::SpriteSheetAnimationSetManifest) (contains [`SpriteSheetAnimationManifest`](crate::asset_loader::SpriteSheetAnimationManifest)) and the corresponding [`SpriteSheetAnimationLoader`](crate::asset_loader::SpriteSheetAnimationLoader).
-//! Assets with the 'trickfilm' extension can be loaded just like any other asset via the [`AssetServer`](::bevy::asset::AssetServer)
-//! and will yield a [`SpriteSheetAnimationSet`](crate::asset_loader::SpriteSheetAnimationSet) [`Handle`](::bevy::asset::Handle).
-//! Additionally it provides built-in support for animation playing with the [`SpriteSheetAnimationPlayer`](crate::animation::SpriteSheetAnimationPlayer) component.
+//! `bevy_trickfilm` introduces an [`AnimationClipSet2DManifest`](crate::asset::asset_loader::AnimationClipSet2DManifest) (contains [`AnimationClip2DManifest`](crate::asset::asset_loader::AnimationClip2DManifest)) and the corresponding [`Animation2DLoader`](crate::asset::asset_loader::Animation2DLoader).
+//! Assets with the 'trickfilm' extension can be loaded just like any other asset via the [`AssetServer`](bevy::asset::AssetServer)
+//! and will yield an [`AnimationClipSet2D`](crate::asset::AnimationClipSet2D) [`Handle`](bevy::asset::Handle) (or an [`AnimationClip2D`](crate::asset::AnimationClip2D) [`Handle`](bevy::asset::Handle) directly via labeled assets).
+//! Additionally it provides built-in support for animation playing with the [`AnimationPlayer2D`](crate::animation::AnimationPlayer2D) component.
 //!
-//! ### `spritesheet_animation.trickfilm`
+//! ### `gabe-idle-run.trickfilm`
 //! ```rust,ignore
-//! SpriteSheetAnimationSetManifest (       /* The explicit type name can be omitted */
-//!    name: String,                        /* Optional name for this animation set */
+//! AnimationClipSet2DManifest (                                    /* The explicit type name can be omitted. */
+//!    name: String,                                                /* Optional name for this animation set. */
 //!    animations: {
-//!        "idle": (                        /* Name of the animation */
-//!            path: String,                /* Path to some file that support loading to TextureAtlas (such as manifest files for bevy_titan or bevy_heterogeneous_texture_atlas_loader) */
-//!            repeating: boolean,          /* Whether this animation shall automatically repeat from the start */
-//!            fps: usize,                  /* Animation speed in frames per second */
-//!            indices: [0,1,2,3],          /* Indices into the TextureAtlas that represent the ordered list of frames of this animation */
-//!        ),
-//!        "kick": (                         
-//!            path: String,                /* Animation of the same AnimationSet can reference the same or a different underlying spritesheet */
-//!            repeating: boolean,          
-//!            fps: usize,                  
-//!            indices: [4,5,6,7,8,9,10],    
-//!        ),
+//!         "idle": (                                               /* Name of the animation. */
+//!             keyframe_timestamps: Some([0]),                     /* Keyframe timestamps of this animation. You can provide None, to automatically calulcate the timestamps based on the amount of keyframes and the duration. */
+//!             keyframes: SpriteSheet(                             /* Keyframes of this animation. For the SpriteSheet variant you need to provide: */
+//!                 "spritesheet_animation/gabe-idle-run.titan",    /* A path to the manifest file that will load to a TextureAtlas asset. */
+//!                 IndexVec(                                       /* The indices inside of that TextureAtlas that represent the individual keyframes. */
+//!                     [0]
+//!                 ),
+//!             ),
+//!             duration: 0.1,                                      /* Complete duration of the animation. */
+//!         ),
+//!         "run": (
+//!             keyframe_timestamps: None,                          /* Will automatically calculate the timestamps. */
+//!             keyframes: SpriteSheet(     
+//!                 "spritesheet_animation/gabe-idle-run.titan",
+//!                 IndexRange(                                     /* If the indices of your keyframes are in order, you can simply provide a range instead. */
+//!                     (start: 1, end: 7)
+//!                 ),
+//!             ),
+//!             duration: 0.6,
+//!         ),
 //!    },
 //! )
 //! ```
@@ -34,38 +42,26 @@
 //!     App::new()
 //!         .add_plugins(DefaultPlugins)
 //!         /* Add some plugin to load spritesheet manifest files */
-//!         .add_plugin(SpriteSheetAnimationPlugin)
+//!         .add_plugin(Animation2DPlugin)
 //!         .add_startup_system(setup)
-//!         .add_system(kick)
 //!         .run();
 //! }
 //!
-//! #[derive(Component)]
-//! struct Controlled;
-//!
 //! fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-//!     let spritesheet_animationset_handle = asset_server.load("spritesheet_animation.trickfilm");
+//!     let animation_clip_handle = asset_server.load("spritesheet_animation.trickfilm#run");
+//!     let animation_player = AnimationPlayer2D::default().play(animation_clip_handle).repeat();
 //!     commands.spawn(Camera2dBundle::default());
 //!     commands.spawn((
 //!         SpriteSheetBundle {
 //!             transform: Transform::from_scale(Vec3::splat(6.0)),
 //!             ..default()
 //!         },
-//!         SpriteSheetAnimationPlayer::new(spritesheet_animationset_handle)
-//!             .with_animation(String::from("idle")),
-//!         Controlled,
+//!         animation_player,
 //!     ));
 //! }
 //!
-//! fn kick(mut animation_players: Query<&mut SpriteSheetAnimationPlayer, With<Controlled>>, keys: Res<Input<KeyCode>>) {
-//!     if keys.just_pressed(KeyCode::Space) {
-//!         for mut animation_player in &mut animation_players {
-//!             animation_player.play(String::from("kick"));
-//!         }
-//!     }
-//! }
-//!
 //! ```
+//!
 
 #![forbid(unsafe_code)]
 #![warn(unused_imports, missing_docs)]
@@ -73,14 +69,14 @@
 use bevy::prelude::{App, Plugin};
 
 pub mod animation;
-pub mod assets;
+pub mod asset;
 
-/// Adds support for spritesheet animation loading and playing.
-pub struct SpriteSheetAnimationPlugin;
+/// Adds support for 2d animation loading and playing.
+pub struct Animation2DPlugin;
 
-impl Plugin for SpriteSheetAnimationPlugin {
+impl Plugin for Animation2DPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(assets::Animation2DLoaderPlugin)
+        app.add_plugin(asset::Animation2DLoaderPlugin)
             .add_plugin(animation::AnimationPlayer2DPlugin);
     }
 }
@@ -88,6 +84,6 @@ impl Plugin for SpriteSheetAnimationPlugin {
 /// `use bevy_trickfilm::prelude::*;` to import common components and plugins.
 pub mod prelude {
     pub use crate::animation::{AnimationPlayer2D, AnimationPlayer2DPlugin};
-    pub use crate::assets::{Animation2DLoaderPlugin, AnimationClip2D, AnimationClipSet2D};
-    pub use crate::SpriteSheetAnimationPlugin;
+    pub use crate::asset::{Animation2DLoaderPlugin, AnimationClip2D, AnimationClipSet2D};
+    pub use crate::Animation2DPlugin;
 }

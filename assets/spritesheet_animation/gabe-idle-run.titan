@@ -1,5 +1,5 @@
 (
-    path: "gabe-idle-run.png",
+    path: "spritesheet_animation/gabe-idle-run.png",
     tile_size: (
         w: 24.0,
         h: 24.0,

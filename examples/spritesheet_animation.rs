@@ -23,7 +23,7 @@ struct Animations(Vec<Handle<AnimationClip2D>>);
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(Animations(vec![
-        asset_server.load("gabe-idle-run.trickfilm#run")
+        asset_server.load("spritesheet_animation/gabe-idle-run.trickfilm#run")
     ]));
 
     commands.spawn(Camera2dBundle::default());

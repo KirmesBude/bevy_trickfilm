@@ -18,15 +18,17 @@ pub fn animation_player_spritesheet(
         &mut Handle<TextureAtlas>,
     )>,
 ) {
-    query.par_for_each_mut(32, |(player, sprite, texture_atlas_handle)| {
-        run_animation_player_spritesheet(
-            &time,
-            &animation_clips,
-            player,
-            sprite,
-            texture_atlas_handle,
-        );
-    });
+    query
+        .par_iter_mut()
+        .for_each_mut(|(player, sprite, texture_atlas_handle)| {
+            run_animation_player_spritesheet(
+                &time,
+                &animation_clips,
+                player,
+                sprite,
+                texture_atlas_handle,
+            );
+        });
 }
 
 /// Updates animation player and forwards changes of the frame to the TextureAtlasSprite component.

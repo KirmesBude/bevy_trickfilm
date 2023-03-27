@@ -13,7 +13,7 @@ pub fn animation_player_sprite(
     animation_clips: Res<Assets<AnimationClip2D>>,
     mut query: Query<(&mut AnimationPlayer2D, &mut Handle<Image>)>,
 ) {
-    query.par_for_each_mut(32, |(player, image_handle)| {
+    query.par_iter_mut().for_each_mut(|(player, image_handle)| {
         run_animation_player_sprite(&time, &animation_clips, player, image_handle);
     });
 }

@@ -7,6 +7,7 @@
 
 | bevy | bevy_trickfilm |
 |------|----------------|
+| 0.10 | 0.2.0          |
 | 0.9  | 0.1.0          |
 
 ## What is bevy_trickfilm?

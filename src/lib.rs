@@ -44,20 +44,42 @@
 //!         /* Add some plugin to load spritesheet manifest files */
 //!         .add_plugin(Animation2DPlugin)
 //!         .add_startup_system(setup)
+//!         .add_system(setup_scene_once_loaded)
 //!         .run();
 //! }
+//! 
+//! #[derive(Resource)]
+//! struct Animations(Vec<Handle<AnimationClip2D>>);
 //!
 //! fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-//!     let animation_clip_handle = asset_server.load("spritesheet_animation.trickfilm#run");
-//!     let animation_player = AnimationPlayer2D::default().play(animation_clip_handle).repeat();
+//!     // Insert a resource with the current animation information
+//!     commands.insert_resource(Animations(vec![
+//!         asset_server.load("sprite_animation/gabe-idle-run.trickfilm#run"),
+//!     ]));
+//! 
+//!     // Camera
 //!     commands.spawn(Camera2dBundle::default());
-//!     commands.spawn((
-//!         SpriteSheetBundle {
+//! 
+//!     // SpriteSheet entity
+//!     commands
+//!         .spawn(SpriteBundle {
 //!             transform: Transform::from_scale(Vec3::splat(6.0)),
 //!             ..default()
-//!         },
-//!         animation_player,
-//!     ));
+//!         })
+//!         .insert(AnimationPlayer2D::default());
+//! }
+//! 
+//! fn setup_scene_once_loaded(
+//!     animations: Res<Animations>,
+//!     mut player: Query<&mut AnimationPlayer2D>,
+//!     mut done: Local<bool>,
+//! ) {
+//!     if !*done {
+//!         if let Ok(mut player) = player.get_single_mut() {
+//!             player.play(animations.0[0].clone_weak()).repeat();
+//!             *done = true;
+//!         }
+//!     }
 //! }
 //!
 //! ```

@@ -1,4 +1,5 @@
 //! This module handles loading an AnimationClipSet2D and AnimationClip2D from a manifest file.
+//! Look at the manifest type declarations and the examples on how to write such a manidest file.
 //!
 
 use bevy::{

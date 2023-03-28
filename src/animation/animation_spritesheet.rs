@@ -8,7 +8,8 @@ use crate::asset::{AnimationClip2D, Keyframes2D};
 
 use super::{AnimationPlayer2D, PlayingAnimation2D};
 
-/// Updates animation player and forwards changes of the frame to the TextureAtlasSprite component.
+/// System that will play all spritesheet animations, using any entity with an [`AnimationPlayer2D`]
+/// and a [`Handle<AnimationClip2D>`] as an animation root.
 pub fn animation_player_spritesheet(
     time: Res<Time>,
     animation_clips: Res<Assets<AnimationClip2D>>,
@@ -31,7 +32,6 @@ pub fn animation_player_spritesheet(
         });
 }
 
-/// Updates animation player and forwards changes of the frame to the TextureAtlasSprite component.
 fn run_animation_player_spritesheet(
     time: &Time,
     animation_clips: &Assets<AnimationClip2D>,
@@ -55,7 +55,6 @@ fn run_animation_player_spritesheet(
     );
 }
 
-/// Updates animation player and forwards changes of the frame to the TextureAtlasSprite component.
 fn apply_animation_player_spritesheet(
     time: &Time,
     animation_clips: &Assets<AnimationClip2D>,
@@ -65,7 +64,7 @@ fn apply_animation_player_spritesheet(
     mut texture_atlas_handle: Mut<Handle<TextureAtlas>>,
 ) {
     if let Some(animation_clip) = animation_clips.get(&animation.animation_clip) {
-        if let Keyframes2D::SpriteSheet(handle, vec) = &animation_clip.keyframes {
+        if let Keyframes2D::SpriteSheet(handle, vec) = animation_clip.keyframes() {
             // Advance timer
             if !paused {
                 animation.elapsed += time.delta_seconds() * animation.speed;
@@ -73,20 +72,20 @@ fn apply_animation_player_spritesheet(
 
             let mut elapsed = animation.elapsed;
             if animation.repeat {
-                elapsed %= animation_clip.duration;
+                elapsed %= animation_clip.duration();
             }
             if elapsed < 0.0 {
-                elapsed += animation_clip.duration;
+                elapsed += animation_clip.duration();
             }
 
             let index = match animation_clip
-                .keyframe_timestamps
+                .keyframe_timestamps()
                 .binary_search_by(|probe| probe.partial_cmp(&elapsed).unwrap())
             {
-                Ok(n) if n >= animation_clip.keyframe_timestamps.len() - 1 => return, // this clip is finished
+                Ok(n) if n >= animation_clip.keyframe_timestamps().len() - 1 => return, // this clip is finished
                 Ok(i) => i,
                 Err(0) => return, // this clip isn't started yet
-                Err(n) if n > animation_clip.keyframe_timestamps.len() => return, // this clip is finished
+                Err(n) if n > animation_clip.keyframe_timestamps().len() => return, // this clip is finished
                 Err(i) => i - 1,
             };
 

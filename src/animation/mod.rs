@@ -19,7 +19,8 @@ pub struct AnimationPlayer2DPlugin;
 
 impl Plugin for AnimationPlayer2DPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(animation_player_spritesheet)
+        app.register_type::<AnimationPlayer2D>()
+            .add_system(animation_player_spritesheet)
             .add_system(animation_player_sprite);
     }
 }

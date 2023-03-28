@@ -3,7 +3,7 @@
         "idle": (
             keyframe_timestamps: Some([0]),
             keyframes: SpriteSheet(
-                "spritesheet_animation/gabe-idle-run.titan",
+                "spritesheet_animation_titan/gabe-idle-run.titan",
                 IndexVec(
                     [0]
                 ),
@@ -13,7 +13,7 @@
         "run": (
             keyframe_timestamps: None,
             keyframes: SpriteSheet(     
-                "spritesheet_animation/gabe-idle-run.titan",
+                "spritesheet_animation_titan/gabe-idle-run.titan",
                 IndexRange(
                     (start: 1, end: 7)
                 ),

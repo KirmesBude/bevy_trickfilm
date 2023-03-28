@@ -23,13 +23,13 @@ struct Animations(Vec<Handle<AnimationClip2D>>);
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(Animations(vec![
-        asset_server.load("spritesheet_animation/gabe-idle-run.trickfilm#idle"),
-        asset_server.load("spritesheet_animation/gabe-idle-run.trickfilm#run"),
+        asset_server.load("sprite_animation/gabe-idle-run.trickfilm#idle"),
+        asset_server.load("sprite_animation/gabe-idle-run.trickfilm#run"),
     ]));
 
     commands.spawn(Camera2dBundle::default());
     commands
-        .spawn(SpriteSheetBundle {
+        .spawn(SpriteBundle {
             transform: Transform::from_scale(Vec3::splat(6.0)),
             ..default()
         })

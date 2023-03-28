@@ -81,7 +81,6 @@ impl AssetLoader for Animation2DLoader {
                     .collect(),
             };
 
-            // TODO: Does this need all dependencies as well?
             let animation_clip_set_asset = LoadedAsset::new(animation_clip_set);
             load_context.set_default_asset(animation_clip_set_asset);
 

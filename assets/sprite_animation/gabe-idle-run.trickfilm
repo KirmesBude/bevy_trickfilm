@@ -1,7 +1,7 @@
 (                                    
    animations: {
         "idle": (
-            keyframe_timestamps: Some([0]),
+            keyframe_timestamps: Some([0.0]),
             keyframes: Sprite(
                 [
                     "sprite_animation/gabe-idle-0.png",

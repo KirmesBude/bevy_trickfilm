@@ -4,13 +4,11 @@
 //! into a texture atlas, and changing the displayed image periodically.
 
 use bevy::prelude::*;
-use bevy_titan::SpriteSheetLoaderPlugin;
 use bevy_trickfilm::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
-        .add_plugin(SpriteSheetLoaderPlugin)
         .add_plugin(Animation2DPlugin)
         .add_startup_system(setup)
         .add_system(setup_scene_once_loaded)

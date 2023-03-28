@@ -82,6 +82,7 @@ fn apply_animation_player_spritesheet(
                 .keyframe_timestamps()
                 .binary_search_by(|probe| probe.partial_cmp(&elapsed).unwrap())
             {
+                Ok(0) => 0, // this will probably the first frame in the paused state
                 Ok(n) if n >= animation_clip.keyframe_timestamps().len() - 1 => return, // this clip is finished
                 Ok(i) => i,
                 Err(0) => return, // this clip isn't started yet

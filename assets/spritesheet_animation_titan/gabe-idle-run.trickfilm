@@ -1,7 +1,7 @@
 (                                    
    animations: {
         "idle": (
-            keyframe_timestamps: Some([0]),
+            keyframe_timestamps: Some([0.0]),
             keyframes: SpriteSheet(
                 "spritesheet_animation_titan/gabe-idle-run.titan",
                 IndexVec(

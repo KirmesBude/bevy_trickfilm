@@ -11,7 +11,7 @@
 //!    name: String,                                                /* Optional name for this animation set. */
 //!    animations: {
 //!         "idle": (                                               /* Name of the animation. */
-//!             keyframe_timestamps: Some([0]),                     /* Keyframe timestamps of this animation. You can provide None, to automatically calulcate the timestamps based on the amount of keyframes and the duration. */
+//!             keyframe_timestamps: Some([0.0]),                   /* Keyframe timestamps of this animation. You can provide None, to automatically calulcate the timestamps based on the amount of keyframes and the duration. */
 //!             keyframes: SpriteSheet(                             /* Keyframes of this animation. For the SpriteSheet variant you need to provide: */
 //!                 "spritesheet_animation/gabe-idle-run.titan",    /* A path to the manifest file that will load to a TextureAtlas asset. */
 //!                 IndexVec(                                       /* The indices inside of that TextureAtlas that represent the individual keyframes. */
@@ -47,7 +47,7 @@
 //!         .add_system(setup_scene_once_loaded)
 //!         .run();
 //! }
-//! 
+//!
 //! #[derive(Resource)]
 //! struct Animations(Vec<Handle<AnimationClip2D>>);
 //!
@@ -56,10 +56,10 @@
 //!     commands.insert_resource(Animations(vec![
 //!         asset_server.load("sprite_animation/gabe-idle-run.trickfilm#run"),
 //!     ]));
-//! 
+//!
 //!     // Camera
 //!     commands.spawn(Camera2dBundle::default());
-//! 
+//!
 //!     // SpriteSheet entity
 //!     commands
 //!         .spawn(SpriteBundle {
@@ -68,7 +68,7 @@
 //!         })
 //!         .insert(AnimationPlayer2D::default());
 //! }
-//! 
+//!
 //! fn setup_scene_once_loaded(
 //!     animations: Res<Animations>,
 //!     mut player: Query<&mut AnimationPlayer2D>,

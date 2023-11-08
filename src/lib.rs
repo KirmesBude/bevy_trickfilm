@@ -42,9 +42,9 @@
 //!     App::new()
 //!         .add_plugins(DefaultPlugins)
 //!         /* Add some plugin to load spritesheet manifest files */
-//!         .add_plugin(Animation2DPlugin)
-//!         .add_startup_system(setup)
-//!         .add_system(setup_scene_once_loaded)
+//!         .add_plugins(Animation2DPlugin)
+//!         .add_systems(Startup, setup)
+//!         .add_systems(Update, setup_scene_once_loaded)
 //!         .run();
 //! }
 //!

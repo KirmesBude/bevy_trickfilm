@@ -2,8 +2,8 @@
 //!
 
 use bevy::{
-    prelude::{AddAsset, App, Handle, Image, Plugin},
-    reflect::{Reflect, TypeUuid},
+    prelude::{App, Asset, AssetApp, Handle, Image, Plugin},
+    reflect::TypePath,
     sprite::TextureAtlas,
     utils::HashMap,
 };
@@ -17,16 +17,14 @@ pub struct Animation2DLoaderPlugin;
 
 impl Plugin for Animation2DLoaderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_asset::<AnimationClip2D>()
-            .register_asset_reflect::<AnimationClip2D>()
-            .add_asset::<AnimationClipSet2D>()
-            .register_asset_reflect::<AnimationClipSet2D>()
+        app.init_asset::<AnimationClip2D>()
+            .init_asset::<AnimationClipSet2D>()
             .init_asset_loader::<Animation2DLoader>();
     }
 }
 
 /// Keyframes for a 2D animation.
-#[derive(Debug, Clone, Reflect)]
+#[derive(Debug)]
 pub enum Keyframes2D {
     /// For SpriteSheet animations this contains the [`TextureAtlas`](bevy::sprite::TextureAtlas) [`Handle`](bevy::asset::Handle) and an ordered list of indices.
     SpriteSheet(Handle<TextureAtlas>, Vec<usize>),
@@ -41,8 +39,7 @@ impl Default for Keyframes2D {
 }
 
 /// AnimationClip for a 2D animation.
-#[derive(Default, Debug, Clone, TypeUuid, Reflect)]
-#[uuid = "9403342c-8c4e-495e-85ef-3e9cd12ffea5"]
+#[derive(Asset, TypePath, Debug)]
 pub struct AnimationClip2D {
     /// Timestamps for each keyframe in seconds.
     keyframe_timestamps: Vec<f32>,
@@ -73,8 +70,7 @@ impl AnimationClip2D {
 }
 
 /// AnimationClipSet for 2D animations.
-#[derive(Default, Debug, Clone, TypeUuid, Reflect)]
-#[uuid = "ec942212-87dc-4ee4-8300-1e160a389c37"]
+#[derive(Asset, TypePath, Debug)]
 pub struct AnimationClipSet2D {
     /// Optional name of this animation set.
     name: Option<String>,

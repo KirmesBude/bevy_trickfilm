@@ -21,7 +21,7 @@ pub fn animation_player_spritesheet(
 ) {
     query
         .par_iter_mut()
-        .for_each_mut(|(player, sprite, texture_atlas_handle)| {
+        .for_each(|(player, sprite, texture_atlas_handle)| {
             run_animation_player_spritesheet(
                 &time,
                 &animation_clips,

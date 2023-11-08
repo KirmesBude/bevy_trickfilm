@@ -3,11 +3,12 @@
 //!
 
 use bevy::{
-    asset::{AssetLoader, LoadContext, LoadedAsset},
-    utils::{BoxedFuture, HashMap},
+    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
+    utils::{thiserror, BoxedFuture, HashMap},
 };
 use serde::Deserialize;
 use std::ops::Range;
+use thiserror::Error;
 
 use super::{AnimationClip2D, AnimationClipSet2D};
 
@@ -15,18 +16,38 @@ use super::{AnimationClip2D, AnimationClipSet2D};
 #[derive(Default)]
 pub struct Animation2DLoader;
 
+/// Possible errors that can be produced by [`Animation2DLoader`]
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum Animation2DLoaderError {
+    /// An [IO](std::io) Error
+    #[error("Could not open file: {0}")]
+    Io(#[from] std::io::Error),
+    /// A [RON](ron) Error
+    #[error("Could not parse RON: {0}")]
+    RonSpannedError(#[from] ron::error::SpannedError),
+}
+
 /// File extension for spritesheet animation manifest files written in ron.
 pub const FILE_EXTENSIONS: &[&str] = &["trickfilm"];
 
 impl AssetLoader for Animation2DLoader {
+    type Asset = AnimationClipSet2D;
+    type Settings = ();
+    type Error = Animation2DLoaderError;
+
     fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
+        reader: &'a mut Reader,
+        _settings: &'a (),
         load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
+    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
         Box::pin(async move {
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
+
             let animation_clip_set_manifest =
-                ron::de::from_bytes::<AnimationClipSet2DManifest>(bytes)?;
+                ron::de::from_bytes::<AnimationClipSet2DManifest>(&bytes)?;
 
             // Convert AnimationClipSet2DManifest to AnimationClipSet2D
             let animation_clip_set = AnimationClipSet2D {
@@ -50,41 +71,26 @@ impl AssetLoader for Animation2DLoader {
                             keyframes: match &animation_clip_manifest.keyframes {
                                 Keyframes2DManifest::SpriteSheet(path, indices) => {
                                     super::Keyframes2D::SpriteSheet(
-                                        load_context.get_handle(path),
+                                        load_context.load(path),
                                         indices.clone().into(),
                                     )
                                 }
                                 Keyframes2DManifest::Sprite(paths) => super::Keyframes2D::Sprite(
-                                    paths
-                                        .iter()
-                                        .map(|path| load_context.get_handle(path))
-                                        .collect(),
+                                    paths.iter().map(|path| load_context.load(path)).collect(),
                                 ),
                             },
                             duration: animation_clip_manifest.duration,
                         };
 
-                        let mut animation_clip_asset = LoadedAsset::new(animation_clip);
-                        match animation_clip_manifest.keyframes {
-                            Keyframes2DManifest::SpriteSheet(path, _) => {
-                                animation_clip_asset.add_dependency(path.into())
-                            }
-                            Keyframes2DManifest::Sprite(paths) => paths
-                                .iter()
-                                .for_each(|path| animation_clip_asset.add_dependency(path.into())),
-                        }
                         (
                             name.clone(),
-                            load_context.set_labeled_asset(&name, animation_clip_asset),
+                            load_context.add_labeled_asset(name, animation_clip),
                         )
                     })
                     .collect(),
             };
 
-            let animation_clip_set_asset = LoadedAsset::new(animation_clip_set);
-            load_context.set_default_asset(animation_clip_set_asset);
-
-            Ok(())
+            Ok(animation_clip_set)
         })
     }
 

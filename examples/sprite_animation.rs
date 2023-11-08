@@ -9,10 +9,12 @@ use bevy_trickfilm::prelude::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
-        .add_plugin(Animation2DPlugin)
-        .add_startup_system(setup)
-        .add_system(setup_scene_once_loaded)
-        .add_system(keyboard_animation_control)
+        .add_plugins(Animation2DPlugin)
+        .add_systems(Startup, setup)
+        .add_systems(
+            Update,
+            (setup_scene_once_loaded, keyboard_animation_control),
+        )
         .run();
 }
 

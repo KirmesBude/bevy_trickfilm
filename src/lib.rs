@@ -98,8 +98,10 @@ pub struct Animation2DPlugin;
 
 impl Plugin for Animation2DPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(asset::Animation2DLoaderPlugin)
-            .add_plugin(animation::AnimationPlayer2DPlugin);
+        app.add_plugins((
+            asset::Animation2DLoaderPlugin,
+            animation::AnimationPlayer2DPlugin,
+        ));
     }
 }
 

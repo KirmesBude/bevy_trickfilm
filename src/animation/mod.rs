@@ -6,7 +6,7 @@ mod animation_spritesheet;
 
 use crate::prelude::AnimationClip2D;
 use bevy::{
-    prelude::{App, Component, Handle, Plugin, ReflectComponent},
+    prelude::{App, Component, Handle, Plugin, ReflectComponent, Update},
     reflect::Reflect,
 };
 
@@ -19,9 +19,10 @@ pub struct AnimationPlayer2DPlugin;
 
 impl Plugin for AnimationPlayer2DPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<AnimationPlayer2D>()
-            .add_system(animation_player_spritesheet)
-            .add_system(animation_player_sprite);
+        app.register_type::<AnimationPlayer2D>().add_systems(
+            Update,
+            (animation_player_spritesheet, animation_player_sprite),
+        );
     }
 }
 

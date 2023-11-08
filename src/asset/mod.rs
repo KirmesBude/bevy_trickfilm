@@ -3,7 +3,7 @@
 
 use bevy::{
     prelude::{AddAsset, App, Handle, Image, Plugin},
-    reflect::{FromReflect, Reflect, TypeUuid},
+    reflect::{Reflect, TypeUuid},
     sprite::TextureAtlas,
     utils::HashMap,
 };
@@ -26,7 +26,7 @@ impl Plugin for Animation2DLoaderPlugin {
 }
 
 /// Keyframes for a 2D animation.
-#[derive(Debug, Clone, Reflect, FromReflect)]
+#[derive(Debug, Clone, Reflect)]
 pub enum Keyframes2D {
     /// For SpriteSheet animations this contains the [`TextureAtlas`](bevy::sprite::TextureAtlas) [`Handle`](bevy::asset::Handle) and an ordered list of indices.
     SpriteSheet(Handle<TextureAtlas>, Vec<usize>),
@@ -41,7 +41,7 @@ impl Default for Keyframes2D {
 }
 
 /// AnimationClip for a 2D animation.
-#[derive(Default, Debug, Clone, TypeUuid, Reflect, FromReflect)]
+#[derive(Default, Debug, Clone, TypeUuid, Reflect)]
 #[uuid = "9403342c-8c4e-495e-85ef-3e9cd12ffea5"]
 pub struct AnimationClip2D {
     /// Timestamps for each keyframe in seconds.
@@ -73,7 +73,7 @@ impl AnimationClip2D {
 }
 
 /// AnimationClipSet for 2D animations.
-#[derive(Default, Debug, Clone, TypeUuid, Reflect, FromReflect)]
+#[derive(Default, Debug, Clone, TypeUuid, Reflect)]
 #[uuid = "ec942212-87dc-4ee4-8300-1e160a389c37"]
 pub struct AnimationClipSet2D {
     /// Optional name of this animation set.

@@ -108,6 +108,8 @@ impl AnimationClip2D {
     }
 }
 
+/* TODO: Flip this around. Internal representation is Trickfilm */
+/* Userfacing should be AnimationClip2DSet */
 /// Representation of a loaded trickfilm file.
 #[derive(Asset, Debug, TypePath)]
 pub struct Trickfilm {

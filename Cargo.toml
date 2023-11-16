@@ -27,8 +27,4 @@ bevy_titan = "0.4"
 name = "spritesheet_animation_titan"
 path = "examples/spritesheet_animation_titan.rs"
 
-[[example]]
-name = "sprite_animation"
-path = "examples/sprite_animation.rs"
-
-# TODO: Add example using bevy_heterogeneous_texture_atlas_loader
+# TODO: Add example without titan

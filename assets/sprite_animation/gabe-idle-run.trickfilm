@@ -1,9 +1,0 @@
-[
-    (
-        /* optional */ name: "test",
-        keyframes: Vec/Range,
-        /* optional */ keyframe_timestamps: Vec, /* Must be same size as keyframes, if provided */
-        duration: , /* Must be greater than max(keyframe_timestamps), if provided */
-    ),
-    ...
-]

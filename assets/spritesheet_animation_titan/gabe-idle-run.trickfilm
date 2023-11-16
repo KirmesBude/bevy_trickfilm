@@ -1,13 +1,13 @@
 [
     (
         name: "idle",
-        keyframes: [0], /* TODO: Vec */
+        keyframes: KeyframeVec([0]),
         /* optional */ keyframe_timestamps: Some([0.0]), /* Must be same size as keyframes, if provided */
         duration: 0.1, /* Must be greater than max(keyframe_timestamps), if provided */
     ),
     (
         name: "run",
-        keyframes: [1, 2, 3, 4, 5, 6], /* TODO: Range */
+        keyframes: KeyframeRange((start: 1, end: 7)),
         keyframe_timestamps: None,
         duration: 0.6, /* Must be greater than max(keyframe_timestamps), if provided */
     ),

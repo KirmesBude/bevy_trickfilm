@@ -2,6 +2,8 @@
 //! Look at the manifest type declarations and the examples on how to write such a manidest file.
 //!
 
+use std::ops::Range;
+
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
     prelude::Handle,
@@ -30,10 +32,28 @@ pub enum Animation2DLoaderError {
     AnimationClip2DError(#[from] AnimationClip2DError),
 }
 
+/// Declaration of the deserialized variant for the animation frame indices.
+#[derive(Debug, Deserialize)]
+pub enum AnimationClip2DKeyframesManifest {
+    /// You can specify the index of each frame seperately.
+    KeyframeVec(Vec<usize>),
+    /// Use this, if the animation frames of an animation have continuous indices.
+    KeyframeRange(Range<usize>),
+}
+
+impl From<AnimationClip2DKeyframesManifest> for Vec<usize> {
+    fn from(manifest: AnimationClip2DKeyframesManifest) -> Self {
+        match manifest {
+            AnimationClip2DKeyframesManifest::KeyframeVec(vec) => vec,
+            AnimationClip2DKeyframesManifest::KeyframeRange(range) => range.collect(),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct AnimationClip2DManifest {
     name: String,
-    keyframes: Vec<usize>,
+    keyframes: AnimationClip2DKeyframesManifest,
     #[serde(default)]
     keyframe_timestamps: Option<Vec<f32>>,
     duration: f32,
@@ -65,7 +85,7 @@ impl AssetLoader for Animation2DLoader {
                     .map(|animation_clip_manifest| {
                         let name = animation_clip_manifest.name;
                         let duration = animation_clip_manifest.duration;
-                        let keyframes = animation_clip_manifest.keyframes;
+                        let keyframes: Vec<usize> = animation_clip_manifest.keyframes.into();
                         let keyframe_timestamps =
                             animation_clip_manifest.keyframe_timestamps.unwrap_or(
                                 (0..keyframes.len())

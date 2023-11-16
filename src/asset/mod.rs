@@ -20,7 +20,7 @@ pub struct Animation2DLoaderPlugin;
 impl Plugin for Animation2DLoaderPlugin {
     fn build(&self, app: &mut App) {
         app.init_asset::<AnimationClip2D>()
-            .init_asset::<Trickfilm>()
+            .init_asset::<AnimationClip2DSet>()
             .init_asset_loader::<Animation2DLoader>();
     }
 }
@@ -108,11 +108,9 @@ impl AnimationClip2D {
     }
 }
 
-/* TODO: Flip this around. Internal representation is Trickfilm */
-/* Userfacing should be AnimationClip2DSet */
-/// Representation of a loaded trickfilm file.
+/// Set(Map) of AnimationClips for a 2D animation.
 #[derive(Asset, Debug, TypePath)]
-pub struct Trickfilm {
+pub struct AnimationClip2DSet {
     /// Named animations loaded from the trickfilm file.
     pub animations: HashMap<String, Handle<AnimationClip2D>>,
 }

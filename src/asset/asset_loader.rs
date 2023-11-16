@@ -12,7 +12,7 @@ use bevy::{
 use serde::Deserialize;
 use thiserror::Error;
 
-use super::{AnimationClip2D, AnimationClip2DError, Trickfilm};
+use super::{AnimationClip2D, AnimationClip2DError, AnimationClip2DSet};
 
 /// Loader for spritesheet animation manifest files written in ron. Loads an SpriteSheetAnimationSet asset.
 #[derive(Default)]
@@ -34,29 +34,36 @@ pub enum Animation2DLoaderError {
 }
 
 /// Declaration of the deserialized variant for the animation frame indices.
+/// Check examples for usage. Pub only for documentation purposes.
 #[derive(Debug, Deserialize)]
-pub enum AnimationClip2DKeyframesManifest {
+pub enum TrickfilmEntryKeyframes {
     /// You can specify the index of each frame seperately.
-    KeyframeVec(Vec<usize>),
+    KeyframesVec(Vec<usize>),
     /// Use this, if the animation frames of an animation have continuous indices.
-    KeyframeRange(Range<usize>),
+    KeyframesRange(Range<usize>),
 }
 
-impl From<AnimationClip2DKeyframesManifest> for Vec<usize> {
-    fn from(manifest: AnimationClip2DKeyframesManifest) -> Self {
+impl From<TrickfilmEntryKeyframes> for Vec<usize> {
+    fn from(manifest: TrickfilmEntryKeyframes) -> Self {
         match manifest {
-            AnimationClip2DKeyframesManifest::KeyframeVec(vec) => vec,
-            AnimationClip2DKeyframesManifest::KeyframeRange(range) => range.collect(),
+            TrickfilmEntryKeyframes::KeyframesVec(vec) => vec,
+            TrickfilmEntryKeyframes::KeyframesRange(range) => range.collect(),
         }
     }
 }
 
+/// Representation of a loaded trickfilm file.
+/// Check examples for usage. Pub only for documentation purposes.
 #[derive(Debug, Deserialize)]
-struct AnimationClip2DManifest {
+pub struct TrickfilmEntry {
+    /// Name of the animation this entry defines
     name: String,
-    keyframes: AnimationClip2DKeyframesManifest,
+    /// Keyframes of this animation
+    keyframes: TrickfilmEntryKeyframes,
+    /// Keyframe timestamps for this animation
     #[serde(default)]
     keyframe_timestamps: Option<Vec<f32>>,
+    /// Duration ofthis animation
     duration: f32,
 }
 
@@ -64,7 +71,7 @@ struct AnimationClip2DManifest {
 pub const FILE_EXTENSIONS: &[&str] = &["trickfilm"];
 
 impl AssetLoader for Animation2DLoader {
-    type Asset = Trickfilm;
+    type Asset = AnimationClip2DSet;
     type Settings = ();
     type Error = Animation2DLoaderError;
 
@@ -77,25 +84,23 @@ impl AssetLoader for Animation2DLoader {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
-            let animation_clip_manifest_set =
-                ron::de::from_bytes::<Vec<AnimationClip2DManifest>>(&bytes)?;
+            let trickfilm_entries = ron::de::from_bytes::<Vec<TrickfilmEntry>>(&bytes)?;
 
             let animations: Result<HashMap<String, Handle<AnimationClip2D>>, AnimationClip2DError> =
-                animation_clip_manifest_set
+                trickfilm_entries
                     .into_iter()
-                    .map(|animation_clip_manifest| {
-                        let name = animation_clip_manifest.name;
-                        let duration = animation_clip_manifest.duration;
-                        let keyframes: Vec<usize> = animation_clip_manifest.keyframes.into();
-                        let keyframe_timestamps =
-                            animation_clip_manifest.keyframe_timestamps.unwrap_or(
-                                (0..keyframes.len())
-                                    .map(|i| {
-                                        let i = i as f32 / keyframes.len() as f32;
-                                        i * duration
-                                    })
-                                    .collect(),
-                            );
+                    .map(|entry| {
+                        let name = entry.name;
+                        let duration = entry.duration;
+                        let keyframes: Vec<usize> = entry.keyframes.into();
+                        let keyframe_timestamps = entry.keyframe_timestamps.unwrap_or(
+                            (0..keyframes.len())
+                                .map(|i| {
+                                    let i = i as f32 / keyframes.len() as f32;
+                                    i * duration
+                                })
+                                .collect(),
+                        );
 
                         let animation_clip =
                             AnimationClip2D::new(keyframe_timestamps, keyframes, duration)?;
@@ -106,10 +111,10 @@ impl AssetLoader for Animation2DLoader {
                     })
                     .collect();
 
-            let trickfilm = Trickfilm {
+            let animation_clip_2d_set = AnimationClip2DSet {
                 animations: animations?,
             };
-            Ok(trickfilm)
+            Ok(animation_clip_2d_set)
         })
     }
 

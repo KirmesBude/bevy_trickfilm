@@ -30,6 +30,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         asset_server.load("spritesheet_animation_titan/gabe-idle-run.trickfilm#idle"),
     ]));
 
+    let texture_atlas_handle = asset_server.load("spritesheet_animation_titan/gabe-idle-run.titan");
+
     // Camera
     commands.spawn(Camera2dBundle::default());
 
@@ -37,6 +39,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn(SpriteSheetBundle {
             transform: Transform::from_scale(Vec3::splat(6.0)),
+            texture_atlas: texture_atlas_handle,
             ..default()
         })
         .insert(AnimationPlayer2D::default());

@@ -3,10 +3,10 @@
 
 use bevy::{
     prelude::{App, Asset, AssetApp, Handle, Plugin},
-    reflect::{TypePath, Reflect},
+    reflect::TypePath,
     utils::HashMap,
 };
-use serde::Deserialize;
+use thiserror::Error;
 
 use self::asset_loader::Animation2DLoader;
 
@@ -18,12 +18,13 @@ pub struct Animation2DLoaderPlugin;
 impl Plugin for Animation2DLoaderPlugin {
     fn build(&self, app: &mut App) {
         app.init_asset::<AnimationClip2D>()
+            .init_asset::<Trickfilm>()
             .init_asset_loader::<Animation2DLoader>();
     }
 }
 
 /// AnimationClip for a 2D animation.
-#[derive(Asset, Reflect, Clone, Debug, Default, Deserialize)]
+#[derive(Asset, Debug, TypePath)]
 pub struct AnimationClip2D {
     /// Timestamps for each keyframe in seconds.
     keyframe_timestamps: Vec<f32>,
@@ -33,7 +34,37 @@ pub struct AnimationClip2D {
     duration: f32,
 }
 
+/// Possible errors that can be produced by [`AnimationClip2D`]
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum AnimationClip2DError {
+    #[error("Size of keyframes and keyframe_timestamps does not match: {0} and {1}")]
+    SizeMismatch(usize, usize),
+    /* TODO: Handle duration less than max keyframe_timestamps */
+}
+
 impl AnimationClip2D {
+    pub fn new(
+        keyframe_timestamps: Vec<f32>,
+        keyframes: Vec<usize>,
+        duration: f32,
+    ) -> Result<Self, AnimationClip2DError> {
+        let keyframe_timestamps_len = keyframe_timestamps.len();
+        let keyframes_len = keyframes.len();
+        if keyframe_timestamps_len == keyframes_len {
+            Ok(Self {
+                keyframe_timestamps,
+                keyframes,
+                duration,
+            })
+        } else {
+            Err(AnimationClip2DError::SizeMismatch(
+                keyframe_timestamps_len,
+                keyframes_len,
+            ))
+        }
+    }
+
     /// Timestamps for each keyframe in seconds.
     #[inline]
     pub fn keyframe_timestamps(&self) -> &[f32] {

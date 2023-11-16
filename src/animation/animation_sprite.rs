@@ -3,7 +3,7 @@ use bevy::{
     time::Time,
 };
 
-use crate::asset::{AnimationClip2D, Keyframes2D};
+use crate::asset::AnimationClip2D;
 
 use super::{AnimationPlayer2D, PlayingAnimation2D};
 
@@ -48,6 +48,7 @@ fn apply_animation_player_sprite(
     mut image_handle: Mut<Handle<Image>>,
 ) {
     if let Some(animation_clip) = animation_clips.get(&animation.animation_clip) {
+        /*
         if let Keyframes2D::Sprite(image_handles) = animation_clip.keyframes() {
             // Advance timer
             if !paused {
@@ -76,5 +77,6 @@ fn apply_animation_player_sprite(
 
             *image_handle = image_handles[index].clone_weak();
         };
+        */
     }
 }

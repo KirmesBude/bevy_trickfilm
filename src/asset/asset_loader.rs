@@ -4,13 +4,13 @@
 
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
+    prelude::Handle,
     utils::{thiserror, BoxedFuture, HashMap},
 };
 use serde::Deserialize;
-use std::ops::Range;
 use thiserror::Error;
 
-use super::{AnimationClip2D, Trickfilm};
+use super::{AnimationClip2D, AnimationClip2DError, Trickfilm};
 
 /// Loader for spritesheet animation manifest files written in ron. Loads an SpriteSheetAnimationSet asset.
 #[derive(Default)]
@@ -26,6 +26,8 @@ pub enum Animation2DLoaderError {
     /// A [RON](ron) Error
     #[error("Could not parse RON: {0}")]
     RonSpannedError(#[from] ron::error::SpannedError),
+    #[error("AnimationClip2D has internal erro: {0}")]
+    AnimationClip2DError(#[from] AnimationClip2DError),
 }
 
 #[derive(Debug, Deserialize)]
@@ -33,7 +35,7 @@ struct AnimationClip2DManifest {
     name: String,
     keyframes: Vec<usize>,
     #[serde(default)]
-    keyframe_timestamps: Option<Vec<f32>>, 
+    keyframe_timestamps: Option<Vec<f32>>,
     duration: f32,
 }
 
@@ -54,26 +56,38 @@ impl AssetLoader for Animation2DLoader {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
-
             let animation_clip_manifest_set =
                 ron::de::from_bytes::<Vec<AnimationClip2DManifest>>(&bytes)?;
 
+            let animations: Result<HashMap<String, Handle<AnimationClip2D>>, AnimationClip2DError> =
+                animation_clip_manifest_set
+                    .into_iter()
+                    .map(|animation_clip_manifest| {
+                        let name = animation_clip_manifest.name;
+                        let duration = animation_clip_manifest.duration;
+                        let keyframes = animation_clip_manifest.keyframes;
+                        let keyframe_timestamps =
+                            animation_clip_manifest.keyframe_timestamps.unwrap_or(
+                                (0..keyframes.len())
+                                    .map(|i| {
+                                        let i = i as f32 / keyframes.len() as f32;
+                                        i * duration
+                                    })
+                                    .collect(),
+                            );
+
+                        let animation_clip =
+                            AnimationClip2D::new(keyframe_timestamps, keyframes, duration)?;
+                        Ok((
+                            name.clone(),
+                            load_context.add_labeled_asset(name, animation_clip),
+                        ))
+                    })
+                    .collect();
+
             let trickfilm = Trickfilm {
-                animations: animation_clip_manifest_set.into_iter().map(|animation_clip_manifest| {
-                let name = animation_clip_manifest.name;
-                let animation_clip = AnimationClip2D {
-                    keyframe_timestamps: animation_clip_manifest.keyframe_timestamps.unwrap(),
-                    keyframes: animation_clip_manifest.keyframes,
-                    duration: animation_clip_manifest.duration,
-                };
-
-                (
-                    name.clone(),
-                    load_context.add_labeled_asset(name, animation_clip),
-                )
-                }).collect()
+                animations: animations?,
             };
-
             Ok(trickfilm)
         })
     }
@@ -82,4 +96,3 @@ impl AssetLoader for Animation2DLoader {
         FILE_EXTENSIONS
     }
 }
-

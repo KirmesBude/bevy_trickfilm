@@ -1,24 +1,14 @@
-(                                    
-   animations: {
-        "idle": (
-            keyframe_timestamps: Some([0.0]),
-            keyframes: SpriteSheet(
-                "spritesheet_animation_titan/gabe-idle-run.titan",
-                IndexVec(
-                    [0]
-                ),
-            ),
-            duration: 0.1,
-        ),
-        "run": (
-            keyframe_timestamps: None,
-            keyframes: SpriteSheet(     
-                "spritesheet_animation_titan/gabe-idle-run.titan",
-                IndexRange(
-                    (start: 1, end: 7)
-                ),
-            ),
-            duration: 0.6,
-        ),
-   },
-)
+[
+    (
+        name: "idle",
+        keyframes: [0], /* TODO: Vec */
+        /* optional */ keyframe_timestamps: Some([0.0]), /* Must be same size as keyframes, if provided */
+        duration: 0.1, /* Must be greater than max(keyframe_timestamps), if provided */
+    ),
+    (
+        name: "run",
+        keyframes: [1, 2, 3, 4, 5, 6], /* TODO: Range */
+        keyframe_timestamps: None,
+        duration: 0.6, /* Must be greater than max(keyframe_timestamps), if provided */
+    ),
+]

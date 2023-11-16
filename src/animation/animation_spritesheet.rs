@@ -1,6 +1,6 @@
 use bevy::{
-    prelude::{Assets, DetectChanges, Handle, Mut, Query, Res},
-    sprite::{TextureAtlas, TextureAtlasSprite},
+    prelude::{Assets, DetectChanges, Mut, Query, Res},
+    sprite::TextureAtlasSprite,
     time::Time,
 };
 
@@ -13,23 +13,11 @@ use super::{AnimationPlayer2D, PlayingAnimation2D};
 pub fn animation_player_spritesheet(
     time: Res<Time>,
     animation_clips: Res<Assets<AnimationClip2D>>,
-    mut query: Query<(
-        &mut AnimationPlayer2D,
-        &mut TextureAtlasSprite,
-        &mut Handle<TextureAtlas>,
-    )>,
+    mut query: Query<(&mut AnimationPlayer2D, &mut TextureAtlasSprite)>,
 ) {
-    query
-        .par_iter_mut()
-        .for_each(|(player, sprite, texture_atlas_handle)| {
-            run_animation_player_spritesheet(
-                &time,
-                &animation_clips,
-                player,
-                sprite,
-                texture_atlas_handle,
-            );
-        });
+    query.par_iter_mut().for_each(|(player, sprite)| {
+        run_animation_player_spritesheet(&time, &animation_clips, player, sprite);
+    });
 }
 
 fn run_animation_player_spritesheet(
@@ -37,7 +25,6 @@ fn run_animation_player_spritesheet(
     animation_clips: &Assets<AnimationClip2D>,
     mut player: Mut<AnimationPlayer2D>,
     mut sprite: Mut<TextureAtlasSprite>,
-    texture_atlas_handle: Mut<Handle<TextureAtlas>>,
 ) {
     // Allow manual update of elapsed when paused
     let paused = player.paused;
@@ -51,7 +38,6 @@ fn run_animation_player_spritesheet(
         &mut player.animation,
         paused,
         &mut sprite.index,
-        texture_atlas_handle,
     );
 }
 
@@ -61,7 +47,6 @@ fn apply_animation_player_spritesheet(
     animation: &mut PlayingAnimation2D,
     paused: bool,
     sprite_index: &mut usize,
-    mut texture_atlas_handle: Mut<Handle<TextureAtlas>>,
 ) {
     if let Some(animation_clip) = animation_clips.get(&animation.animation_clip) {
         // Advance timer

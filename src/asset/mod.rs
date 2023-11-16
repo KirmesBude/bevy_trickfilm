@@ -40,15 +40,19 @@ pub struct AnimationClip2D {
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum AnimationClip2DError {
+    /// Error that occurs, if the size of keyframes and keyframe_timestamp does not match
     #[error("Size of keyframes and keyframe_timestamps does not match: {0} and {1}")]
     SizeMismatch(usize, usize),
+    /// Error that occurs, if no keyframes are provided
     #[error("Animation clip is empty, because the size of keyframes is 0")]
     Empty(),
+    /// Error that occurs, if duration is not sufficient to play all keyframes
     #[error("Duration of {0} is insufficient to display last keyframe at {1}")]
     InsufficientDuration(f32, f32),
 }
 
 impl AnimationClip2D {
+    /// Creates a valid [`AnimationClip2D`]
     pub fn new(
         keyframe_timestamps: Vec<f32>,
         keyframes: Vec<usize>,

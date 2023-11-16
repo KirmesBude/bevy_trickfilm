@@ -28,6 +28,7 @@ pub enum Animation2DLoaderError {
     /// A [RON](ron) Error
     #[error("Could not parse RON: {0}")]
     RonSpannedError(#[from] ron::error::SpannedError),
+    /// An [`AnimationClip2DError`]
     #[error("AnimationClip2D has internal erro: {0}")]
     AnimationClip2DError(#[from] AnimationClip2DError),
 }

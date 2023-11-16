@@ -1,6 +1,8 @@
 //! This module defines all assets for 2D Animations.
 //!
 
+use std::cmp::Ordering;
+
 use bevy::{
     prelude::{App, Asset, AssetApp, Handle, Plugin},
     reflect::TypePath,
@@ -40,7 +42,10 @@ pub struct AnimationClip2D {
 pub enum AnimationClip2DError {
     #[error("Size of keyframes and keyframe_timestamps does not match: {0} and {1}")]
     SizeMismatch(usize, usize),
-    /* TODO: Handle duration less than max keyframe_timestamps */
+    #[error("Animation clip is empty, because the size of keyframes is 0")]
+    Empty(),
+    #[error("Duration of {0} is insufficient to display last keyframe at {1}")]
+    InsufficientDuration(f32, f32),
 }
 
 impl AnimationClip2D {
@@ -51,18 +56,33 @@ impl AnimationClip2D {
     ) -> Result<Self, AnimationClip2DError> {
         let keyframe_timestamps_len = keyframe_timestamps.len();
         let keyframes_len = keyframes.len();
-        if keyframe_timestamps_len == keyframes_len {
-            Ok(Self {
-                keyframe_timestamps,
-                keyframes,
-                duration,
-            })
-        } else {
-            Err(AnimationClip2DError::SizeMismatch(
+        if keyframe_timestamps_len != keyframes_len {
+            return Err(AnimationClip2DError::SizeMismatch(
                 keyframe_timestamps_len,
                 keyframes_len,
-            ))
+            ));
         }
+
+        if keyframe_timestamps_len == 0 {
+            return Err(AnimationClip2DError::Empty());
+        }
+
+        let keyframe_timestamps_max = keyframe_timestamps
+            .iter()
+            .max_by(|x, y| x.partial_cmp(y).unwrap())
+            .unwrap();
+        if let Some(Ordering::Greater) = keyframe_timestamps_max.partial_cmp(&duration) {
+            return Err(AnimationClip2DError::InsufficientDuration(
+                *keyframe_timestamps_max,
+                duration,
+            ));
+        }
+
+        Ok(Self {
+            keyframe_timestamps,
+            keyframes,
+            duration,
+        })
     }
 
     /// Timestamps for each keyframe in seconds.

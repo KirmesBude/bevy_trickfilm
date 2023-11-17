@@ -20,7 +20,7 @@ ron = "0.8"
 thiserror = "1"
 
 [dev-dependencies]
-bevy = "0.12"
+bevy = { version = "0.12", features = ["file_watcher"] }
 bevy_titan = "0.4"
 bevy_asset_loader =  {version = "0.18.0", features = ["2d"] }
 

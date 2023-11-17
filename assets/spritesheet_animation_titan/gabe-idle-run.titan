@@ -1,5 +1,5 @@
 (
-    path: "spritesheet_animation_titan/gabe-idle-run.png",
+    path: "gabe-idle-run.png",
     tile_size: (
         w: 24.0,
         h: 24.0,

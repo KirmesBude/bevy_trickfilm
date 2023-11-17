@@ -26,8 +26,8 @@ struct Animations(Vec<Handle<AnimationClip2D>>);
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Insert a resource with the current animation information
     commands.insert_resource(Animations(vec![
-        asset_server.load("spritesheet_animation_titan/gabe-idle-run.trickfilm#run"),
-        asset_server.load("spritesheet_animation_titan/gabe-idle-run.trickfilm#idle"),
+        asset_server.load("gabe-idle-run.trickfilm#run"),
+        asset_server.load("gabe-idle-run.trickfilm#idle"),
     ]));
 
     let texture_atlas_handle = asset_server.load("spritesheet_animation_titan/gabe-idle-run.titan");

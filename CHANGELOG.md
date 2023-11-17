@@ -4,6 +4,7 @@ Removed support for collection of sprites. Only texture atlas are supported now.
 texture atlas from sprites or use bevy_titan.
 Change the contents of the trickfilm manifest file. Now the animation itself no longer references the texture atlas. This
 allows reusing the same animation for multiple texture atlases with the same layout. 
+Add example for usage with bevy_asset_loader.
 
 v0.4.0
 ================================================================================================================================

@@ -22,6 +22,7 @@ thiserror = "1"
 [dev-dependencies]
 bevy = "0.12"
 bevy_titan = "0.4"
+bevy_asset_loader =  {version = "0.18.0", features = ["2d"] }
 
 [[example]]
 name = "spritesheet_animation_titan"
@@ -30,3 +31,7 @@ path = "examples/spritesheet_animation_titan.rs"
 [[example]]
 name = "spritesheet_animation"
 path = "examples/spritesheet_animation.rs"
+
+[[example]]
+name = "spritesheet_animation_asset_loader"
+path = "examples/spritesheet_animation_asset_loader.rs"

@@ -4,39 +4,36 @@
 //! and changing the displayed image periodically.
 
 use bevy::prelude::*;
+use bevy_asset_loader::prelude::*;
 use bevy_trickfilm::prelude::*;
 
 fn main() {
     App::new()
+        .add_state::<MyStates>()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(Animation2DPlugin)
-        .add_systems(Startup, setup)
+        .add_loading_state(
+            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+        )
+        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
+        .add_systems(OnEnter(MyStates::Next), setup)
         .add_systems(
             Update,
-            (setup_scene_once_loaded, keyboard_animation_control),
+            (setup_scene_once_loaded, keyboard_animation_control).run_if(in_state(MyStates::Next)),
         )
         .run();
 }
 
-#[derive(Resource)]
-struct Animations(Vec<Handle<AnimationClip2D>>);
+#[derive(AssetCollection, Resource)]
+struct MyAssets {
+    #[asset(texture_atlas(tile_size_x = 24., tile_size_y = 24., columns = 7, rows = 1))]
+    #[asset(path = "gabe-idle-run.png")]
+    gabe: Handle<TextureAtlas>,
+    #[asset(path = "gabe-idle-run.trickfilm")]
+    animation_set: Handle<AnimationClip2DSet>,
+}
 
-fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-) {
-    // Insert a resource with the current animation information
-    commands.insert_resource(Animations(vec![
-        asset_server.load("gabe-idle-run.trickfilm#run"),
-        asset_server.load("gabe-idle-run.trickfilm#idle"),
-    ]));
-
-    let texture_handle = asset_server.load("gabe-idle-run.png");
-    let texture_atlas =
-        TextureAtlas::from_grid(texture_handle, Vec2::new(24.0, 24.0), 7, 1, None, None);
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
-
+fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
     // Camera
     commands.spawn(Camera2dBundle::default());
 
@@ -44,7 +41,7 @@ fn setup(
     commands
         .spawn(SpriteSheetBundle {
             transform: Transform::from_scale(Vec3::splat(6.0)),
-            texture_atlas: texture_atlas_handle,
+            texture_atlas: my_assets.gabe.clone(),
             ..default()
         })
         .insert(AnimationPlayer2D::default());
@@ -58,14 +55,27 @@ fn setup(
 
 // Once the scene is loaded, start the animation
 fn setup_scene_once_loaded(
-    animations: Res<Animations>,
+    my_assets: Res<MyAssets>,
+    animation_clip_2d_sets: Res<Assets<AnimationClip2DSet>>,
     mut player: Query<&mut AnimationPlayer2D>,
     mut done: Local<bool>,
 ) {
     if !*done {
         if let Ok(mut player) = player.get_single_mut() {
-            player.play(animations.0[0].clone_weak()).repeat();
-            *done = true;
+            if let Some(animation_clip_2d_set) =
+                animation_clip_2d_sets.get(&my_assets.animation_set)
+            {
+                player
+                    .play(
+                        animation_clip_2d_set
+                            .animations
+                            .get("run")
+                            .unwrap()
+                            .clone_weak(),
+                    )
+                    .repeat();
+                *done = true;
+            }
         }
     }
 }
@@ -73,7 +83,8 @@ fn setup_scene_once_loaded(
 fn keyboard_animation_control(
     keyboard_input: Res<Input<KeyCode>>,
     mut animation_player: Query<&mut AnimationPlayer2D>,
-    animations: Res<Animations>,
+    my_assets: Res<MyAssets>,
+    animation_clip_2d_sets: Res<Assets<AnimationClip2DSet>>,
     mut current_animation: Local<usize>,
 ) {
     if let Ok(mut player) = animation_player.get_single_mut() {
@@ -106,10 +117,23 @@ fn keyboard_animation_control(
         }
 
         if keyboard_input.just_pressed(KeyCode::Return) {
-            *current_animation = (*current_animation + 1) % animations.0.len();
-            player
-                .play(animations.0[*current_animation].clone_weak())
-                .repeat();
+            if let Some(animation_clip_2d_set) =
+                animation_clip_2d_sets.get(&my_assets.animation_set)
+            {
+                let animations: Vec<&Handle<AnimationClip2D>> =
+                    animation_clip_2d_set.animations.values().collect();
+                *current_animation = (*current_animation + 1) % animations.len();
+                player
+                    .play(animations[*current_animation].clone_weak())
+                    .repeat();
+            }
         }
     }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
+enum MyStates {
+    #[default]
+    AssetLoading,
+    Next,
 }

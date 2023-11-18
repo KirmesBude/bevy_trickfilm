@@ -24,6 +24,9 @@ bevy = { version = "0.12", features = ["file_watcher"] }
 bevy_titan = "0.4"
 bevy_asset_loader =  {version = "0.18.0", features = ["2d"] }
 
+[replace]
+"bevy:0.12.0" = { git = "https://github.com/bushrat011899/bevy" , branch = "QAPassOverAssetIdAndHandle" }
+
 [[example]]
 name = "spritesheet_animation_titan"
 path = "examples/spritesheet_animation_titan.rs"

@@ -19,7 +19,7 @@ fn main() {
         .add_systems(OnEnter(MyStates::Next), setup)
         .add_systems(
             Update,
-            (setup_scene_once_loaded, keyboard_animation_control).run_if(in_state(MyStates::Next)),
+            keyboard_animation_control.run_if(in_state(MyStates::Next)),
         )
         .run();
 }
@@ -29,13 +29,22 @@ struct MyAssets {
     #[asset(texture_atlas(tile_size_x = 24., tile_size_y = 24., columns = 7, rows = 1))]
     #[asset(path = "gabe-idle-run.png")]
     gabe: Handle<TextureAtlas>,
-    #[asset(path = "gabe-idle-run.trickfilm")]
-    animation_set: Handle<AnimationClip2DSet>,
+    #[asset(
+        paths("gabe-idle-run.trickfilm#run", "gabe-idle-run.trickfilm#idle"),
+        collection(typed)
+    )]
+    animations: Vec<Handle<AnimationClip2D>>,
 }
 
 fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
     // Camera
     commands.spawn(Camera2dBundle::default());
+
+    // Prepare AnimationPlayer
+    let mut animation_player = AnimationPlayer2D::default();
+    animation_player
+        .play(my_assets.animations[0].clone_weak())
+        .repeat();
 
     // SpriteSheet entity
     commands
@@ -44,7 +53,7 @@ fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
             texture_atlas: my_assets.gabe.clone(),
             ..default()
         })
-        .insert(AnimationPlayer2D::default());
+        .insert(animation_player);
 
     println!("Animation controls:");
     println!("  - spacebar: play / pause");
@@ -53,38 +62,10 @@ fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
     println!("  - return: change animation");
 }
 
-// Once the scene is loaded, start the animation
-fn setup_scene_once_loaded(
-    my_assets: Res<MyAssets>,
-    animation_clip_2d_sets: Res<Assets<AnimationClip2DSet>>,
-    mut player: Query<&mut AnimationPlayer2D>,
-    mut done: Local<bool>,
-) {
-    if !*done {
-        if let Ok(mut player) = player.get_single_mut() {
-            if let Some(animation_clip_2d_set) =
-                animation_clip_2d_sets.get(&my_assets.animation_set)
-            {
-                player
-                    .play(
-                        animation_clip_2d_set
-                            .animations
-                            .get("run")
-                            .unwrap()
-                            .clone_weak(),
-                    )
-                    .repeat();
-                *done = true;
-            }
-        }
-    }
-}
-
 fn keyboard_animation_control(
     keyboard_input: Res<Input<KeyCode>>,
     mut animation_player: Query<&mut AnimationPlayer2D>,
     my_assets: Res<MyAssets>,
-    animation_clip_2d_sets: Res<Assets<AnimationClip2DSet>>,
     mut current_animation: Local<usize>,
 ) {
     if let Ok(mut player) = animation_player.get_single_mut() {
@@ -117,16 +98,11 @@ fn keyboard_animation_control(
         }
 
         if keyboard_input.just_pressed(KeyCode::Return) {
-            if let Some(animation_clip_2d_set) =
-                animation_clip_2d_sets.get(&my_assets.animation_set)
-            {
-                let animations: Vec<&Handle<AnimationClip2D>> =
-                    animation_clip_2d_set.animations.values().collect();
-                *current_animation = (*current_animation + 1) % animations.len();
-                player
-                    .play(animations[*current_animation].clone_weak())
-                    .repeat();
-            }
+            let animations = &my_assets.animations;
+            *current_animation = (*current_animation + 1) % animations.len();
+            player
+                .play(animations[*current_animation].clone_weak())
+                .repeat();
         }
     }
 }

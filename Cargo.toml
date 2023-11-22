@@ -1,7 +1,7 @@
 [package]
 authors = ["KirmesBude <kirmesbude@gmail.com>"]
 name = "bevy_trickfilm"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 description = "Bevy plugin for spritesheet manifest loading"
 repository = "https://github.com/KirmesBude/bevy_trickfilm"
@@ -21,11 +21,8 @@ thiserror = "1"
 
 [dev-dependencies]
 bevy = { version = "0.12", features = ["file_watcher"] }
-bevy_titan = "0.4"
+bevy_titan = "0.5"
 bevy_asset_loader =  {version = "0.18.0", features = ["2d"] }
-
-[replace]
-"bevy:0.12.0" = { git = "https://github.com/bushrat011899/bevy" , branch = "QAPassOverAssetIdAndHandle" }
 
 [[example]]
 name = "spritesheet_animation_titan"

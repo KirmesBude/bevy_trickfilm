@@ -1,7 +1,7 @@
 [package]
 authors = ["KirmesBude <kirmesbude@gmail.com>"]
 name = "bevy_trickfilm"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 description = "Bevy plugin for spritesheet manifest loading"
 repository = "https://github.com/KirmesBude/bevy_trickfilm"
@@ -20,15 +20,18 @@ ron = "0.8"
 thiserror = "1"
 
 [dev-dependencies]
-bevy = "0.12"
-bevy_titan = "0.4"
+bevy = { version = "0.12", features = ["file_watcher"] }
+bevy_titan = "0.5"
+bevy_asset_loader =  {version = "0.18.0", features = ["2d"] }
 
 [[example]]
 name = "spritesheet_animation_titan"
 path = "examples/spritesheet_animation_titan.rs"
 
 [[example]]
-name = "sprite_animation"
-path = "examples/sprite_animation.rs"
+name = "spritesheet_animation"
+path = "examples/spritesheet_animation.rs"
 
-# TODO: Add example using bevy_heterogeneous_texture_atlas_loader
+[[example]]
+name = "spritesheet_animation_asset_loader"
+path = "examples/spritesheet_animation_asset_loader.rs"

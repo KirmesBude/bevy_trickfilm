@@ -7,15 +7,16 @@
 
 | bevy | bevy_trickfilm |
 |------|----------------|
-| 0.12 | 0.4.0          |
+| 0.12 | 0.4.0, 0.5.0   |
 | 0.11 | 0.3.0          |
 | 0.10 | 0.2.0          |
 | 0.9  | 0.1.0          |
 
 ## What is bevy_trickfilm?
 
-Simple plugin to load spritesheet animations from manifest files written in ron. 
-You will need to provide a way to load a texture atlas from a manifest file. For already developed solutions take a look at [bevy_titan](https://github.com/KirmesBude/bevy_titan) or [bevy_heterogeneous_texture_atlas_loader](https://github.com/ickshonpe/bevy_heterogeneous_texture_atlas_loader).
+Simple plugin to load spritesheet animations from manifest files written in ron. The animations are not directly tied to a certain sprite sheet.
+Supports hot reloading.
+You can combine this with plugins that add the ability to load a texture atlas from a manifest file. For example: [bevy_titan](https://github.com/KirmesBude/bevy_titan) or [bevy_heterogeneous_texture_atlas_loader](https://github.com/ickshonpe/bevy_heterogeneous_texture_atlas_loader).
 
 ## How to use?
 

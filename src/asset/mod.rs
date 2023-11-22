@@ -1,12 +1,14 @@
 //! This module defines all assets for 2D Animations.
 //!
 
+use std::cmp::Ordering;
+
 use bevy::{
-    prelude::{App, Asset, AssetApp, Handle, Image, Plugin},
+    prelude::{App, Asset, AssetApp, Handle, Plugin},
     reflect::TypePath,
-    sprite::TextureAtlas,
     utils::HashMap,
 };
+use thiserror::Error;
 
 use self::asset_loader::Animation2DLoader;
 
@@ -18,38 +20,75 @@ pub struct Animation2DLoaderPlugin;
 impl Plugin for Animation2DLoaderPlugin {
     fn build(&self, app: &mut App) {
         app.init_asset::<AnimationClip2D>()
-            .init_asset::<AnimationClipSet2D>()
+            .init_asset::<AnimationClip2DSet>()
             .init_asset_loader::<Animation2DLoader>();
     }
 }
 
-/// Keyframes for a 2D animation.
-#[derive(Debug)]
-pub enum Keyframes2D {
-    /// For SpriteSheet animations this contains the [`TextureAtlas`](bevy::sprite::TextureAtlas) [`Handle`](bevy::asset::Handle) and an ordered list of indices.
-    SpriteSheet(Handle<TextureAtlas>, Vec<usize>),
-    /// For Sprite animations this contains an ordered list of [`Image`](bevy::render::texture::Image) [`Handle`](bevy::asset::Handle)s.
-    Sprite(Vec<Handle<Image>>),
-}
-
-impl Default for Keyframes2D {
-    fn default() -> Self {
-        Self::Sprite(vec![])
-    }
-}
-
 /// AnimationClip for a 2D animation.
-#[derive(Asset, TypePath, Debug)]
+#[derive(Asset, Debug, TypePath)]
 pub struct AnimationClip2D {
     /// Timestamps for each keyframe in seconds.
     keyframe_timestamps: Vec<f32>,
     /// An ordered list of incides of the TextureAtlas or Images that represent the frames of this animation.
-    keyframes: Keyframes2D,
+    keyframes: Vec<usize>,
     /// Total duration of this animation clip in seconds.
     duration: f32,
 }
 
+/// Possible errors that can be produced by [`AnimationClip2D`]
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum AnimationClip2DError {
+    /// Error that occurs, if the size of keyframes and keyframe_timestamp does not match
+    #[error("Size of keyframes and keyframe_timestamps does not match: {0} and {1}")]
+    SizeMismatch(usize, usize),
+    /// Error that occurs, if no keyframes are provided
+    #[error("Animation clip is empty, because the size of keyframes is 0")]
+    Empty(),
+    /// Error that occurs, if duration is not sufficient to play all keyframes
+    #[error("Duration of {0} is insufficient to display last keyframe at {1}")]
+    InsufficientDuration(f32, f32),
+}
+
 impl AnimationClip2D {
+    /// Creates a valid [`AnimationClip2D`]
+    pub fn new(
+        keyframe_timestamps: Vec<f32>,
+        keyframes: Vec<usize>,
+        duration: f32,
+    ) -> Result<Self, AnimationClip2DError> {
+        let keyframe_timestamps_len = keyframe_timestamps.len();
+        let keyframes_len = keyframes.len();
+        if keyframe_timestamps_len != keyframes_len {
+            return Err(AnimationClip2DError::SizeMismatch(
+                keyframe_timestamps_len,
+                keyframes_len,
+            ));
+        }
+
+        if keyframe_timestamps_len == 0 {
+            return Err(AnimationClip2DError::Empty());
+        }
+
+        let keyframe_timestamps_max = keyframe_timestamps
+            .iter()
+            .max_by(|x, y| x.partial_cmp(y).unwrap())
+            .unwrap();
+        if let Some(Ordering::Greater) = keyframe_timestamps_max.partial_cmp(&duration) {
+            return Err(AnimationClip2DError::InsufficientDuration(
+                *keyframe_timestamps_max,
+                duration,
+            ));
+        }
+
+        Ok(Self {
+            keyframe_timestamps,
+            keyframes,
+            duration,
+        })
+    }
+
     /// Timestamps for each keyframe in seconds.
     #[inline]
     pub fn keyframe_timestamps(&self) -> &[f32] {
@@ -58,7 +97,7 @@ impl AnimationClip2D {
 
     /// Ordered list of [`Keyframes2D`] elements for this animation.
     #[inline]
-    pub fn keyframes(&self) -> &Keyframes2D {
+    pub fn keyframes(&self) -> &[usize] {
         &self.keyframes
     }
 
@@ -69,27 +108,9 @@ impl AnimationClip2D {
     }
 }
 
-/// AnimationClipSet for 2D animations.
-#[derive(Asset, TypePath, Debug)]
-pub struct AnimationClipSet2D {
-    /// Optional name of this animation set.
-    name: Option<String>,
-    /// A map of all animations in this set, identified by their names.
-    animations: HashMap<String, Handle<AnimationClip2D>>,
-}
-
-impl AnimationClipSet2D {
-    /// Gets the name of this animation set.
-    ///
-    /// Returns `None` if no name was set.
-    #[inline]
-    pub fn name(&self) -> Option<&str> {
-        self.name.as_deref()
-    }
-
-    /// HashMap of list of [`AnimationClip2D`] [`Handle`](bevy::asset::Handle)s. Indexed by the animation clip name.
-    #[inline]
-    pub fn animations(&self) -> &HashMap<String, Handle<AnimationClip2D>> {
-        &self.animations
-    }
+/// Set(Map) of AnimationClips for a 2D animation.
+#[derive(Asset, Debug, TypePath)]
+pub struct AnimationClip2DSet {
+    /// Named animations loaded from the trickfilm file.
+    pub animations: HashMap<String, Handle<AnimationClip2D>>,
 }

@@ -4,13 +4,11 @@
 //! and changing the displayed image periodically.
 
 use bevy::prelude::*;
-use bevy_titan::SpriteSheetLoaderPlugin;
 use bevy_trickfilm::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
-        .add_plugins(SpriteSheetLoaderPlugin)
         .add_plugins(Animation2DPlugin)
         .add_systems(Startup, setup)
         .add_systems(
@@ -23,14 +21,21 @@ fn main() {
 #[derive(Resource)]
 struct Animations(Vec<Handle<AnimationClip2D>>);
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+) {
     // Insert a resource with the current animation information
     commands.insert_resource(Animations(vec![
         asset_server.load("gabe-idle-run.trickfilm#run"),
         asset_server.load("gabe-idle-run.trickfilm#idle"),
     ]));
 
-    let texture_atlas_handle = asset_server.load("spritesheet_animation_titan/gabe-idle-run.titan");
+    let texture_handle = asset_server.load("gabe-idle-run.png");
+    let texture_atlas =
+        TextureAtlas::from_grid(texture_handle, Vec2::new(24.0, 24.0), 7, 1, None, None);
+    let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     // Camera
     commands.spawn(Camera2dBundle::default());

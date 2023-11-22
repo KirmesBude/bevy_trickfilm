@@ -1,7 +1,6 @@
 //! This module handles playing animations from an ['AnimationClip2D'](crate::asset::AnimationClip2D) asset using the ['AnimationPlayer2D'](crate::animation::AnimationPlayer2D) component.
 //!
 
-mod animation_sprite;
 mod animation_spritesheet;
 
 use crate::prelude::AnimationClip2D;
@@ -10,19 +9,15 @@ use bevy::{
     reflect::Reflect,
 };
 
-use self::{
-    animation_sprite::animation_player_sprite, animation_spritesheet::animation_player_spritesheet,
-};
+use self::animation_spritesheet::animation_player_spritesheet;
 
 /// Adds support for spritesheet animation playing.
 pub struct AnimationPlayer2DPlugin;
 
 impl Plugin for AnimationPlayer2DPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<AnimationPlayer2D>().add_systems(
-            Update,
-            (animation_player_spritesheet, animation_player_sprite),
-        );
+        app.register_type::<AnimationPlayer2D>()
+            .add_systems(Update, animation_player_spritesheet);
     }
 }
 

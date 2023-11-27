@@ -29,21 +29,26 @@ struct MyAssets {
     #[asset(texture_atlas(tile_size_x = 24., tile_size_y = 24., columns = 7, rows = 1))]
     #[asset(path = "gabe-idle-run.png")]
     gabe: Handle<TextureAtlas>,
-    #[asset(
-        paths("gabe-idle-run.trickfilm#run", "gabe-idle-run.trickfilm#idle"),
-        collection(typed)
-    )]
-    animations: Vec<Handle<AnimationClip2D>>,
+    #[asset(path = "gabe-idle-run.trickfilm")]
+    animations: Handle<AnimationClip2DSet>,
 }
 
-fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
+fn setup(
+    mut commands: Commands,
+    my_assets: Res<MyAssets>,
+    animation_clip_2d_sets: Res<Assets<AnimationClip2DSet>>,
+) {
     // Camera
     commands.spawn(Camera2dBundle::default());
+
+    let animations = animation_clip_2d_sets
+        .get(my_assets.animations.clone_weak())
+        .unwrap();
 
     // Prepare AnimationPlayer
     let mut animation_player = AnimationPlayer2D::default();
     animation_player
-        .play(my_assets.animations[0].clone_weak())
+        .play(animations.animations["run"].clone_weak())
         .repeat();
 
     // SpriteSheet entity
@@ -67,6 +72,7 @@ fn keyboard_animation_control(
     mut animation_player: Query<&mut AnimationPlayer2D>,
     my_assets: Res<MyAssets>,
     mut current_animation: Local<usize>,
+    animation_clip_2d_sets: Res<Assets<AnimationClip2DSet>>,
 ) {
     if let Ok(mut player) = animation_player.get_single_mut() {
         if keyboard_input.just_pressed(KeyCode::Space) {
@@ -98,11 +104,17 @@ fn keyboard_animation_control(
         }
 
         if keyboard_input.just_pressed(KeyCode::Return) {
-            let animations = &my_assets.animations;
-            *current_animation = (*current_animation + 1) % animations.len();
-            player
-                .play(animations[*current_animation].clone_weak())
-                .repeat();
+            let animations = animation_clip_2d_sets
+                .get(my_assets.animations.clone_weak())
+                .unwrap();
+
+            *current_animation = (*current_animation + 1) % 2;
+            let animation = match *current_animation {
+                0 => animations.animations["idle"].clone_weak(),
+                1 => animations.animations["run"].clone_weak(),
+                _ => !unreachable!(),
+            };
+            player.play(animation).repeat();
         }
     }
 }

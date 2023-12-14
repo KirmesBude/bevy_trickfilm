@@ -24,6 +24,7 @@ impl Plugin for AnimationPlayer2DPlugin {
 #[derive(Reflect)]
 struct PlayingAnimation2D {
     repeat: bool,
+    finished: bool,
     speed: f32,
     elapsed: f32,
     animation_clip: Handle<AnimationClip2D>,
@@ -33,6 +34,7 @@ impl Default for PlayingAnimation2D {
     fn default() -> Self {
         Self {
             repeat: false,
+            finished: false,
             speed: 1.0,
             elapsed: 0.0,
             animation_clip: Default::default(),
@@ -91,6 +93,12 @@ impl AnimationPlayer2D {
     /// Is the animation paused
     pub fn is_paused(&self) -> bool {
         self.paused
+    }
+
+    /// Is the animation finished
+    /// Always `false` for repeating animations.
+    pub fn is_finished(&self) -> bool {
+        self.animation.finished
     }
 
     /// Speed of the animation playback

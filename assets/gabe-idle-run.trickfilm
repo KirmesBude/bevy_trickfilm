@@ -1,14 +1,12 @@
-[
-    (
-        name: "idle",
+{
+    "idle": (
         keyframes: KeyframesVec([0]),
         /* optional */ keyframe_timestamps: Some([0.0]), /* Must be same size as keyframes, if provided */
         duration: 0.1, /* Must be greater than max(keyframe_timestamps), if provided */
     ),
-    (
-        name: "run",
+    "run": (
         keyframes: KeyframesRange((start: 1, end: 7)),
         keyframe_timestamps: None,
         duration: 0.6, /* Must be greater than max(keyframe_timestamps), if provided */
     ),
-]
+}

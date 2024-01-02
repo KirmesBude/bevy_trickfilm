@@ -52,8 +52,6 @@ impl From<TrickfilmEntryKeyframes> for Vec<usize> {
 /// Representation of a loaded trickfilm file.
 #[derive(Debug, Deserialize)]
 struct TrickfilmEntry {
-    /// Name of the animation this entry defines
-    name: String,
     /// Keyframes of this animation
     keyframes: TrickfilmEntryKeyframes,
     /// Keyframe timestamps for this animation
@@ -80,13 +78,12 @@ impl AssetLoader for Animation2DLoader {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
-            let trickfilm_entries = ron::de::from_bytes::<Vec<TrickfilmEntry>>(&bytes)?;
+            let trickfilm_entries = ron::de::from_bytes::<HashMap<String, TrickfilmEntry>>(&bytes)?;
 
             let animations: Result<HashMap<String, Handle<AnimationClip2D>>, AnimationClip2DError> =
                 trickfilm_entries
                     .into_iter()
-                    .map(|entry| {
-                        let name = entry.name;
+                    .map(|(name, entry)| {
                         let duration = entry.duration;
                         let keyframes: Vec<usize> = entry.keyframes.into();
                         let keyframe_timestamps = entry.keyframe_timestamps.unwrap_or(

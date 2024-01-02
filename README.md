@@ -15,27 +15,107 @@
 ## What is bevy_trickfilm?
 
 Simple plugin to load spritesheet animations from manifest files written in ron. The animations are not directly tied to a certain sprite sheet.
-Supports hot reloading.
 You can combine this with plugins that add the ability to load a texture atlas from a manifest file. For example: [bevy_titan](https://github.com/KirmesBude/bevy_titan) or [bevy_heterogeneous_texture_atlas_loader](https://github.com/ickshonpe/bevy_heterogeneous_texture_atlas_loader).
 
-## How to use?
+## Quickstart
 
-Check the examples for usage.
+
+```toml, ignore
+# In your Cargo.toml
+bevy_trickfilm = "0.5"
+```
+
+### animation_clip.trickfilm
+```rust, ignore
+//! A basic example of a trickfilm file.
+[
+    (
+        name: "idle",
+        keyframes: KeyframesRange((start: 0, end: 4)),
+        duration: 1.0,
+    ),
+    (
+        name: "run",
+        keyframes: KeyframesRange((start: 4, end: 10)),
+        duration: 0.6,
+    ),
+    (
+        name: "run",
+        keyframes: KeyframesVec([10,11,12]),
+	keyframe_timestamps: Some([0.0. 1.0, 3.0]),
+        duration: 0.4,
+    ),
+]
+```
+
+### main.rs
+```rust, ignore
+//! A basic example of how to load an AnimationClip2D asset from a trickfilm file
+//! and play the animation clip.
+use bevy::prelude::*;
+use bevy_trickfilm::prelude::*;
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_plugins(Animation2DPlugin)
+        .add_systems(Startup, (setup, load_texture_atlas).chain())
+        .add_systems(Update, play_animation_once_loaded)
+        .run();
+}
+
+fn setup() {
+    /* Setup camera and other stuff */
+}
+
+fn load_texture_atlas(mut commands: Commands) {
+    let texture_atlas_handle = /* Create your TextureAtlas and retrieve a handle to it */;
+
+    commands
+        .spawn(SpriteSheetBundle {
+            texture_atlas: texture_atlas_handle,
+            ..default()
+        })
+        .insert(AnimationPlayer2D::default());
+}
+
+// Once the scene is loaded, start the animation
+fn play_animation_once_loaded(
+    asset_server: Res<AssetServer>
+    mut players: Query<&mut AnimationPlayer2D, Added<AnimationPlayer2D>>,
+) {
+    for mut player in &mut players {
+        player.start(asset_server.load("animation_clip.trickfilm#idle")).repeat();
+    }
+}
+```
+
+## Documentation
+
+[Full API Documentation](https://docs.rs/bevy_trickfilm)
+
+[File format specifiction](https://github.com/KirmesBude/bevy_trickfilm/blob/main/docs/FileFormatSpecification.md)
+
+[Examples](https://github.com/KirmesBude/bevy_trickfilm/tree/main/examples)
+
+## Future Work
+
+* Not sure
 
 ## License
 
 bevy_trickfilm is free, open source and permissively licensed!
 Except where noted (below and/or in individual files), all code in this repository is dual-licensed under either:
 
-* MIT License ([LICENSE-MIT](LICENSE-MIT) or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
-* Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
+* MIT License ([LICENSE-MIT](https://github.com/KirmesBude/bevy_trickfilm/blob/main/LICENSE-MIT) or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
+* Apache License, Version 2.0 ([LICENSE-APACHE](https://github.com/KirmesBude/bevy_trickfilm/blob/main/LICENSE-APACHE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
 
 at your option.
 This means you can select the license you prefer!
 
 Some of the code was adapted from other sources.
-The [assets](assets) included in this repository fall under different open licenses.
-See [CREDITS.md](CREDITS.md) for the details of the origin of the adapted code and licenses of those files.
+The [assets](https://github.com/KirmesBude/bevy_trickfilm/tree/main/assets) included in this repository fall under different open licenses.
+See [CREDITS.md](https://github.com/KirmesBude/bevy_trickfilm/blob/main/CREDITS.md) for the details of the origin of the adapted code and licenses of those files.
 
 ### Your contributions
 

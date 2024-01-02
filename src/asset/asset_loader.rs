@@ -1,5 +1,4 @@
-//! This module handles loading an AnimationClipSet2D and AnimationClip2D from a manifest file.
-//! Look at the manifest type declarations and the examples on how to write such a manidest file.
+//! This module contains the internals of the Animation2DLoader.
 //!
 
 use std::ops::Range;
@@ -14,29 +13,27 @@ use thiserror::Error;
 
 use super::{AnimationClip2D, AnimationClip2DError, AnimationClip2DSet};
 
-/// Loader for spritesheet animation manifest files written in ron. Loads an SpriteSheetAnimationSet asset.
 #[derive(Default)]
-pub struct Animation2DLoader;
+pub(crate) struct Animation2DLoader;
 
-/// Possible errors that can be produced by [`Animation2DLoader`]
+/// Possible errors that can be produced by Animation2DLoader.
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum Animation2DLoaderError {
-    /// An [IO](std::io) Error
+    /// An [IOError](std::io::Error).
     #[error("Could not open file: {0}")]
     Io(#[from] std::io::Error),
-    /// A [RON](ron) Error
+    /// A [SpannedError](ron::error::SpannedError).
     #[error("Could not parse RON: {0}")]
     RonSpannedError(#[from] ron::error::SpannedError),
-    /// An [`AnimationClip2DError`]
+    /// An [`AnimationClip2DError`].
     #[error("AnimationClip2D has internal erro: {0}")]
     AnimationClip2DError(#[from] AnimationClip2DError),
 }
 
 /// Declaration of the deserialized variant for the animation frame indices.
-/// Check examples for usage. Pub only for documentation purposes.
 #[derive(Debug, Deserialize)]
-pub enum TrickfilmEntryKeyframes {
+enum TrickfilmEntryKeyframes {
     /// You can specify the index of each frame seperately.
     KeyframesVec(Vec<usize>),
     /// Use this, if the animation frames of an animation have continuous indices.
@@ -53,9 +50,8 @@ impl From<TrickfilmEntryKeyframes> for Vec<usize> {
 }
 
 /// Representation of a loaded trickfilm file.
-/// Check examples for usage. Pub only for documentation purposes.
 #[derive(Debug, Deserialize)]
-pub struct TrickfilmEntry {
+struct TrickfilmEntry {
     /// Name of the animation this entry defines
     name: String,
     /// Keyframes of this animation
@@ -68,7 +64,7 @@ pub struct TrickfilmEntry {
 }
 
 /// File extension for spritesheet animation manifest files written in ron.
-pub const FILE_EXTENSIONS: &[&str] = &["trickfilm"];
+const FILE_EXTENSIONS: &[&str] = &["trickfilm"];
 
 impl AssetLoader for Animation2DLoader {
     type Asset = AnimationClip2DSet;

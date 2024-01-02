@@ -1,7 +1,7 @@
 [package]
 authors = ["KirmesBude <kirmesbude@gmail.com>"]
 name = "bevy_trickfilm"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
 description = "Bevy plugin for spritesheet manifest loading"
 repository = "https://github.com/KirmesBude/bevy_trickfilm"
@@ -33,5 +33,5 @@ name = "spritesheet_animation"
 path = "examples/spritesheet_animation.rs"
 
 [[example]]
-name = "spritesheet_animation_asset_loader"
-path = "examples/spritesheet_animation_asset_loader.rs"
+name = "bevy_asset_loader"
+path = "examples/bevy_asset_loader.rs"

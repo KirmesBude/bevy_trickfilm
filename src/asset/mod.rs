@@ -1,4 +1,7 @@
 //! This module defines all assets for 2D Animations.
+//! This crate allows you to directly load an [`AnimationClip2DSet`] and/or [`AnimationClip2D`] from a manifest file.
+//! Assets with the 'trickfilm' extension can be loaded just like any other asset via the [`AssetServer`](bevy::asset::AssetServer)
+//! and will yield an [`AnimationClip2DSet`] [`Handle`] (or an [`AnimationClip2D`] [`Handle`] directly via labeled assets).
 //!
 
 use std::cmp::Ordering;
@@ -40,13 +43,13 @@ pub struct AnimationClip2D {
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum AnimationClip2DError {
-    /// Error that occurs, if the size of keyframes and keyframe_timestamp does not match
+    /// Error that occurs, if the size of keyframes and keyframe_timestamp does not match.
     #[error("Size of keyframes and keyframe_timestamps does not match: {0} and {1}")]
     SizeMismatch(usize, usize),
-    /// Error that occurs, if no keyframes are provided
+    /// Error that occurs, if no keyframes are provided.
     #[error("Animation clip is empty, because the size of keyframes is 0")]
     Empty(),
-    /// Error that occurs, if duration is not sufficient to play all keyframes
+    /// Error that occurs, if duration is not sufficient to play all keyframes.
     #[error("Duration of {0} is insufficient to display last keyframe at {1}")]
     InsufficientDuration(f32, f32),
 }
@@ -95,7 +98,7 @@ impl AnimationClip2D {
         &self.keyframe_timestamps
     }
 
-    /// Ordered list of [`Keyframes2D`] elements for this animation.
+    /// Ordered list of keyframes for this animation.
     #[inline]
     pub fn keyframes(&self) -> &[usize] {
         &self.keyframes

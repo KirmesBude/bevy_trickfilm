@@ -10,7 +10,7 @@ use super::{AnimationPlayer2D, PlayingAnimation2D};
 
 /// System that will play all spritesheet animations, using any entity with an [`AnimationPlayer2D`]
 /// and a [`Handle<AnimationClip2D>`] as an animation root.
-pub fn animation_player_spritesheet(
+pub(crate) fn animation_player_spritesheet(
     time: Res<Time>,
     animation_clips: Res<Assets<AnimationClip2D>>,
     mut query: Query<(&mut AnimationPlayer2D, &mut TextureAtlasSprite)>,

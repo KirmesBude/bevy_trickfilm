@@ -25,12 +25,12 @@ bevy_titan = "0.5"
 bevy_asset_loader =  {version = "0.18.0", features = ["2d"] }
 
 [[example]]
-name = "spritesheet_animation_titan"
-path = "examples/spritesheet_animation_titan.rs"
+name = "sprite_sheet_animation"
+path = "examples/sprite_sheet_animation.rs"
 
 [[example]]
-name = "spritesheet_animation"
-path = "examples/spritesheet_animation.rs"
+name = "sprite_sheet_animation_titan"
+path = "examples/sprite_sheet_animation_titan.rs"
 
 [[example]]
 name = "bevy_asset_loader"

@@ -8,7 +8,7 @@ use std::cmp::Ordering;
 
 use bevy::{
     prelude::{App, Asset, AssetApp, Handle, Plugin},
-    reflect::TypePath,
+    reflect::Reflect,
     utils::HashMap,
 };
 use thiserror::Error;
@@ -29,7 +29,7 @@ impl Plugin for Animation2DLoaderPlugin {
 }
 
 /// AnimationClip for a 2D animation.
-#[derive(Asset, Debug, TypePath)]
+#[derive(Asset, Reflect, Clone, Debug, Default)]
 pub struct AnimationClip2D {
     /// Timestamps for each keyframe in seconds.
     keyframe_timestamps: Vec<f32>,
@@ -112,7 +112,7 @@ impl AnimationClip2D {
 }
 
 /// Set(Map) of AnimationClips for a 2D animation.
-#[derive(Asset, Debug, TypePath)]
+#[derive(Asset, Reflect, Clone, Debug, Default)]
 pub struct AnimationClip2DSet {
     /// Named animations loaded from the trickfilm file.
     pub animations: HashMap<String, Handle<AnimationClip2D>>,

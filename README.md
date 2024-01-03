@@ -28,24 +28,21 @@ bevy_trickfilm = "0.5"
 ### animation_clip.trickfilm
 ```rust, ignore
 //! A basic example of a trickfilm file.
-[
-    (
-        name: "idle",
+{
+    "idle": (
         keyframes: KeyframesRange((start: 0, end: 4)),
         duration: 1.0,
     ),
-    (
-        name: "run",
+    "run": (
         keyframes: KeyframesRange((start: 4, end: 10)),
         duration: 0.6,
     ),
-    (
-        name: "run",
+    "jump": (
         keyframes: KeyframesVec([10,11,12]),
-	keyframe_timestamps: Some([0.0. 1.0, 3.0]),
+	    keyframe_timestamps: Some([0.0. 1.0, 3.0]),
         duration: 0.4,
     ),
-]
+}
 ```
 
 ### main.rs

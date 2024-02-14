@@ -9,13 +9,14 @@ use bevy_trickfilm::prelude::*;
 
 fn main() {
     App::new()
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(Animation2DPlugin)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<MyAssets>(),
         )
-        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
         .add_systems(OnEnter(MyStates::Next), setup)
         .add_systems(
             Update,
@@ -27,8 +28,9 @@ fn main() {
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(texture_atlas(tile_size_x = 24., tile_size_y = 24., columns = 7, rows = 1))]
+    gabe_layout: Handle<TextureAtlasLayout>,
     #[asset(path = "gabe-idle-run.png")]
-    gabe: Handle<TextureAtlas>,
+    gabe_texture: Handle<Image>,
     #[asset(
         paths("gabe-idle-run.trickfilm#run", "gabe-idle-run.trickfilm#idle"),
         collection(typed)
@@ -50,7 +52,11 @@ fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
     commands
         .spawn(SpriteSheetBundle {
             transform: Transform::from_scale(Vec3::splat(6.0)),
-            texture_atlas: my_assets.gabe.clone(),
+            texture: my_assets.gabe_texture.clone(),
+            atlas: TextureAtlas {
+                layout: my_assets.gabe_layout.clone(),
+                ..Default::default()
+            },
             ..default()
         })
         .insert(animation_player);
@@ -65,7 +71,7 @@ fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
 }
 
 fn keyboard_animation_control(
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     mut animation_player: Query<&mut AnimationPlayer2D>,
     my_assets: Res<MyAssets>,
     mut current_animation: Local<usize>,
@@ -79,27 +85,27 @@ fn keyboard_animation_control(
             }
         }
 
-        if keyboard_input.just_pressed(KeyCode::Up) {
+        if keyboard_input.just_pressed(KeyCode::ArrowUp) {
             let speed = player.speed();
             player.set_speed(speed * 1.2);
         }
 
-        if keyboard_input.just_pressed(KeyCode::Down) {
+        if keyboard_input.just_pressed(KeyCode::ArrowDown) {
             let speed = player.speed();
             player.set_speed(speed * 0.8);
         }
 
-        if keyboard_input.just_pressed(KeyCode::Left) {
+        if keyboard_input.just_pressed(KeyCode::ArrowLeft) {
             let elapsed = player.seek_time();
             player.seek_to(elapsed - 0.1);
         }
 
-        if keyboard_input.just_pressed(KeyCode::Right) {
+        if keyboard_input.just_pressed(KeyCode::ArrowRight) {
             let elapsed = player.seek_time();
             player.seek_to(elapsed + 0.1);
         }
 
-        if keyboard_input.just_pressed(KeyCode::Return) {
+        if keyboard_input.just_pressed(KeyCode::Enter) {
             let animations = &my_assets.animations;
             *current_animation = (*current_animation + 1) % animations.len();
             player
@@ -107,22 +113,22 @@ fn keyboard_animation_control(
                 .repeat();
         }
 
-        if keyboard_input.just_pressed(KeyCode::Key1) {
+        if keyboard_input.just_pressed(KeyCode::Digit1) {
             player.set_repeat(RepeatAnimation::Count(1));
             player.replay();
         }
 
-        if keyboard_input.just_pressed(KeyCode::Key3) {
+        if keyboard_input.just_pressed(KeyCode::Digit3) {
             player.set_repeat(RepeatAnimation::Count(3));
             player.replay();
         }
 
-        if keyboard_input.just_pressed(KeyCode::Key5) {
+        if keyboard_input.just_pressed(KeyCode::Digit5) {
             player.set_repeat(RepeatAnimation::Count(5));
             player.replay();
         }
 
-        if keyboard_input.just_pressed(KeyCode::L) {
+        if keyboard_input.just_pressed(KeyCode::KeyL) {
             player.set_repeat(RepeatAnimation::Forever);
         }
     }

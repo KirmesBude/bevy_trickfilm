@@ -6,7 +6,20 @@ pub fn keyboard_animation_control_helper(
     player: &mut AnimationPlayer2D,
     animations: &[Handle<AnimationClip2D>],
     current_animation: &mut usize,
+    instructions_printed: &mut bool,
 ) {
+    if !*instructions_printed {
+        println!("Animation controls:");
+        println!("  - spacebar: play / pause");
+        println!("  - arrow up / down: speed up / slow down animation playback");
+        println!("  - arrow left / right: seek backward / forward");
+        println!("  - digit 1 / 3 / 5: play the animation <digit> times");
+        println!("  - L: loop the animation forever");
+        println!("  - return: change animation");
+
+        *instructions_printed = true;
+    }
+
     if keyboard_input.just_pressed(KeyCode::Space) {
         if player.is_paused() {
             player.resume();

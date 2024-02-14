@@ -33,12 +33,6 @@ fn setup(
         asset_server.load("gabe-idle-run.trickfilm#idle"),
     ];
 
-    // Insert a resource with the current animation information
-    commands.insert_resource(Animations(vec![
-        asset_server.load("gabe-idle-run.trickfilm#run"),
-        asset_server.load("gabe-idle-run.trickfilm#idle"),
-    ]));
-
     let atlas_texture = asset_server.load("gabe-idle-run.png");
     let texture_atlas_layout =
         TextureAtlasLayout::from_grid(Vec2::new(24.0, 24.0), 7, 1, None, None);
@@ -81,6 +75,7 @@ fn keyboard_animation_control(
     mut animation_player: Query<&mut AnimationPlayer2D>,
     animations: Res<Animations>,
     mut current_animation: Local<usize>,
+    mut instructions_printed: Local<bool>,
 ) {
     if let Ok(mut player) = animation_player.get_single_mut() {
         keyboard_animation_control_helper(
@@ -88,6 +83,7 @@ fn keyboard_animation_control(
             &mut player,
             &animations.0,
             &mut current_animation,
+            &mut instructions_printed,
         );
     }
 }

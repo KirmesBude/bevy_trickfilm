@@ -57,14 +57,6 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         })
         .insert(animation_player);
-
-    println!("Animation controls:");
-    println!("  - spacebar: play / pause");
-    println!("  - arrow up / down: speed up / slow down animation playback");
-    println!("  - arrow left / right: seek backward / forward");
-    println!("  - digit 1 / 3 / 5: play the animation <digit> times");
-    println!("  - L: loop the animation forever");
-    println!("  - return: change animation");
 }
 
 fn keyboard_animation_control(
@@ -72,6 +64,7 @@ fn keyboard_animation_control(
     mut animation_player: Query<&mut AnimationPlayer2D>,
     animations: Res<Animations>,
     mut current_animation: Local<usize>,
+    mut instructions_printed: Local<bool>,
 ) {
     if let Ok(mut player) = animation_player.get_single_mut() {
         keyboard_animation_control_helper(
@@ -79,6 +72,7 @@ fn keyboard_animation_control(
             &mut player,
             &animations.0,
             &mut current_animation,
+            &mut instructions_printed,
         );
     }
 }

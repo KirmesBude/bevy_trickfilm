@@ -3,7 +3,11 @@
 //! Renders an animated sprite by loading all animation frames from multiple sprites
 //! and changing the displayed image periodically.
 
-use bevy::{animation::RepeatAnimation, prelude::*};
+#[path = "helpers/animation_controller.rs"]
+mod animation_helper;
+
+use animation_helper::keyboard_animation_control_helper;
+use bevy::prelude::*;
 use bevy_trickfilm::prelude::*;
 
 fn main() {
@@ -11,10 +15,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(Animation2DPlugin)
         .add_systems(Startup, setup)
-        .add_systems(
-            Update,
-            (setup_scene_once_loaded, keyboard_animation_control),
-        )
+        .add_systems(Update, keyboard_animation_control)
         .run();
 }
 
@@ -26,6 +27,12 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
+    // Load all animations
+    let animations = vec![
+        asset_server.load("gabe-idle-run.trickfilm#run"),
+        asset_server.load("gabe-idle-run.trickfilm#idle"),
+    ];
+
     // Insert a resource with the current animation information
     commands.insert_resource(Animations(vec![
         asset_server.load("gabe-idle-run.trickfilm#run"),
@@ -43,6 +50,13 @@ fn setup(
     // Camera
     commands.spawn(Camera2dBundle::default());
 
+    // Prepare AnimationPlayer
+    let mut animation_player = AnimationPlayer2D::default();
+    animation_player.play(animations[0].clone_weak()).repeat();
+
+    // Insert a resource with the current animation information
+    commands.insert_resource(Animations(animations));
+
     // SpriteSheet entity
     commands
         .spawn(SpriteSheetBundle {
@@ -51,7 +65,7 @@ fn setup(
             atlas: texture_atlas,
             ..default()
         })
-        .insert(AnimationPlayer2D::default());
+        .insert(animation_player);
 
     println!("Animation controls:");
     println!("  - spacebar: play / pause");
@@ -62,20 +76,6 @@ fn setup(
     println!("  - return: change animation");
 }
 
-// Once the scene is loaded, start the animation
-fn setup_scene_once_loaded(
-    animations: Res<Animations>,
-    mut player: Query<&mut AnimationPlayer2D>,
-    mut done: Local<bool>,
-) {
-    if !*done {
-        if let Ok(mut player) = player.get_single_mut() {
-            player.play(animations.0[0].clone_weak()).repeat();
-            *done = true;
-        }
-    }
-}
-
 fn keyboard_animation_control(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut animation_player: Query<&mut AnimationPlayer2D>,
@@ -83,59 +83,11 @@ fn keyboard_animation_control(
     mut current_animation: Local<usize>,
 ) {
     if let Ok(mut player) = animation_player.get_single_mut() {
-        if keyboard_input.just_pressed(KeyCode::Space) {
-            if player.is_paused() {
-                player.resume();
-            } else {
-                player.pause();
-            }
-        }
-
-        if keyboard_input.just_pressed(KeyCode::ArrowUp) {
-            let speed = player.speed();
-            player.set_speed(speed * 1.2);
-        }
-
-        if keyboard_input.just_pressed(KeyCode::ArrowDown) {
-            let speed = player.speed();
-            player.set_speed(speed * 0.8);
-        }
-
-        if keyboard_input.just_pressed(KeyCode::ArrowLeft) {
-            let elapsed = player.seek_time();
-            player.seek_to(elapsed - 0.1);
-        }
-
-        if keyboard_input.just_pressed(KeyCode::ArrowRight) {
-            let elapsed = player.seek_time();
-            player.seek_to(elapsed + 0.1);
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Enter) {
-            let animations = &animations.0;
-            *current_animation = (*current_animation + 1) % animations.len();
-            player
-                .play(animations[*current_animation].clone_weak())
-                .repeat();
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Digit1) {
-            player.set_repeat(RepeatAnimation::Count(1));
-            player.replay();
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Digit3) {
-            player.set_repeat(RepeatAnimation::Count(3));
-            player.replay();
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Digit5) {
-            player.set_repeat(RepeatAnimation::Count(5));
-            player.replay();
-        }
-
-        if keyboard_input.just_pressed(KeyCode::KeyL) {
-            player.set_repeat(RepeatAnimation::Forever);
-        }
+        keyboard_animation_control_helper(
+            &keyboard_input,
+            &mut player,
+            &animations.0,
+            &mut current_animation,
+        );
     }
 }

@@ -3,7 +3,11 @@
 //! Renders an animated sprite by loading all animation frames from multiple sprites
 //! and changing the displayed image periodically.
 
-use bevy::{animation::RepeatAnimation, prelude::*};
+#[path = "helpers/animation_controller.rs"]
+mod animation_helper;
+
+use animation_helper::keyboard_animation_control_helper;
+use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use bevy_trickfilm::prelude::*;
 
@@ -77,60 +81,12 @@ fn keyboard_animation_control(
     mut current_animation: Local<usize>,
 ) {
     if let Ok(mut player) = animation_player.get_single_mut() {
-        if keyboard_input.just_pressed(KeyCode::Space) {
-            if player.is_paused() {
-                player.resume();
-            } else {
-                player.pause();
-            }
-        }
-
-        if keyboard_input.just_pressed(KeyCode::ArrowUp) {
-            let speed = player.speed();
-            player.set_speed(speed * 1.2);
-        }
-
-        if keyboard_input.just_pressed(KeyCode::ArrowDown) {
-            let speed = player.speed();
-            player.set_speed(speed * 0.8);
-        }
-
-        if keyboard_input.just_pressed(KeyCode::ArrowLeft) {
-            let elapsed = player.seek_time();
-            player.seek_to(elapsed - 0.1);
-        }
-
-        if keyboard_input.just_pressed(KeyCode::ArrowRight) {
-            let elapsed = player.seek_time();
-            player.seek_to(elapsed + 0.1);
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Enter) {
-            let animations = &my_assets.animations;
-            *current_animation = (*current_animation + 1) % animations.len();
-            player
-                .play(animations[*current_animation].clone_weak())
-                .repeat();
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Digit1) {
-            player.set_repeat(RepeatAnimation::Count(1));
-            player.replay();
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Digit3) {
-            player.set_repeat(RepeatAnimation::Count(3));
-            player.replay();
-        }
-
-        if keyboard_input.just_pressed(KeyCode::Digit5) {
-            player.set_repeat(RepeatAnimation::Count(5));
-            player.replay();
-        }
-
-        if keyboard_input.just_pressed(KeyCode::KeyL) {
-            player.set_repeat(RepeatAnimation::Forever);
-        }
+        keyboard_animation_control_helper(
+            &keyboard_input,
+            &mut player,
+            &my_assets.animations,
+            &mut current_animation,
+        );
     }
 }
 

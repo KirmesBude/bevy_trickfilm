@@ -4,9 +4,9 @@
 //! and changing the displayed image periodically.
 
 #[path = "helpers/animation_controller.rs"]
-mod animation_controller;
+mod animation_helper;
 
-use animation_controller::keyboard_animation_control;
+use animation_helper::keyboard_animation_control_helper;
 use bevy::prelude::*;
 use bevy_trickfilm::prelude::*;
 
@@ -15,7 +15,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(Animation2DPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, my_keyboard_animation_control)
+        .add_systems(Update, keyboard_animation_control)
         .run();
 }
 
@@ -25,49 +25,62 @@ struct Animations(Vec<Handle<AnimationClip2D>>);
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
+    // Load all animations
+    let animations = vec![
+        asset_server.load("gabe-idle-run.trickfilm#run"),
+        asset_server.load("gabe-idle-run.trickfilm#idle"),
+    ];
+
+    let atlas_texture = asset_server.load("gabe-idle-run.png");
+    let texture_atlas_layout =
+        TextureAtlasLayout::from_grid(Vec2::new(24.0, 24.0), 7, 1, None, None);
+    let texture_atlas = TextureAtlas {
+        layout: texture_atlas_layouts.add(texture_atlas_layout),
+        ..Default::default()
+    };
+
     // Camera
     commands.spawn(Camera2dBundle::default());
 
-    let animations = Animations(vec![
-        asset_server.load("gabe-idle-run.trickfilm#run"),
-        asset_server.load("gabe-idle-run.trickfilm#idle"),
-    ]);
-
     // Prepare AnimationPlayer
     let mut animation_player = AnimationPlayer2D::default();
-    animation_player.play(animations.0[0].clone_weak()).repeat();
+    animation_player.play(animations[0].clone_weak()).repeat();
 
     // Insert a resource with the current animation information
-    commands.insert_resource(animations);
-
-    let texture_handle = asset_server.load("gabe-idle-run.png");
-    let texture_atlas =
-        TextureAtlas::from_grid(texture_handle, Vec2::new(24.0, 24.0), 7, 1, None, None);
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    commands.insert_resource(Animations(animations));
 
     // SpriteSheet entity
     commands
         .spawn(SpriteSheetBundle {
             transform: Transform::from_scale(Vec3::splat(6.0)),
-            texture_atlas: texture_atlas_handle,
+            texture: atlas_texture,
+            atlas: texture_atlas,
             ..default()
         })
         .insert(animation_player);
+
+    println!("Animation controls:");
+    println!("  - spacebar: play / pause");
+    println!("  - arrow up / down: speed up / slow down animation playback");
+    println!("  - arrow left / right: seek backward / forward");
+    println!("  - digit 1 / 3 / 5: play the animation <digit> times");
+    println!("  - L: loop the animation forever");
+    println!("  - return: change animation");
 }
 
-fn my_keyboard_animation_control(
-    keyboard_input: Res<Input<KeyCode>>,
-    mut animation_players: Query<&mut AnimationPlayer2D>,
+fn keyboard_animation_control(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut animation_player: Query<&mut AnimationPlayer2D>,
     animations: Res<Animations>,
     mut current_animation: Local<usize>,
     mut instructions_printed: Local<bool>,
 ) {
-    if let Ok(mut animation_player) = animation_players.get_single_mut() {
-        keyboard_animation_control(
+    if let Ok(mut player) = animation_player.get_single_mut() {
+        keyboard_animation_control_helper(
             &keyboard_input,
-            &mut animation_player,
+            &mut player,
             &animations.0,
             &mut current_animation,
             &mut instructions_printed,

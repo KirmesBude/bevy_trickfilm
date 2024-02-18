@@ -4,26 +4,27 @@
 //! and changing the displayed image periodically.
 
 #[path = "helpers/animation_controller.rs"]
-mod animation_controller;
+mod animation_helper;
 
-use animation_controller::keyboard_animation_control;
+use animation_helper::keyboard_animation_control_helper;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use bevy_trickfilm::prelude::*;
 
 fn main() {
     App::new()
-        .add_state::<MyStates>()
+        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(Animation2DPlugin)
         .add_loading_state(
-            LoadingState::new(MyStates::AssetLoading).continue_to_state(MyStates::Next),
+            LoadingState::new(MyStates::AssetLoading)
+                .continue_to_state(MyStates::Next)
+                .load_collection::<MyAssets>(),
         )
-        .add_collection_to_loading_state::<_, MyAssets>(MyStates::AssetLoading)
         .add_systems(OnEnter(MyStates::Next), setup)
         .add_systems(
             Update,
-            my_keyboard_animation_control.run_if(in_state(MyStates::Next)),
+            keyboard_animation_control.run_if(in_state(MyStates::Next)),
         )
         .run();
 }
@@ -31,8 +32,9 @@ fn main() {
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
     #[asset(texture_atlas(tile_size_x = 24., tile_size_y = 24., columns = 7, rows = 1))]
+    gabe_layout: Handle<TextureAtlasLayout>,
     #[asset(path = "gabe-idle-run.png")]
-    gabe: Handle<TextureAtlas>,
+    gabe_texture: Handle<Image>,
     #[asset(
         paths("gabe-idle-run.trickfilm#run", "gabe-idle-run.trickfilm#idle"),
         collection(typed)
@@ -54,10 +56,32 @@ fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
     commands
         .spawn(SpriteSheetBundle {
             transform: Transform::from_scale(Vec3::splat(6.0)),
-            texture_atlas: my_assets.gabe.clone(),
+            texture: my_assets.gabe_texture.clone(),
+            atlas: TextureAtlas {
+                layout: my_assets.gabe_layout.clone(),
+                ..Default::default()
+            },
             ..default()
         })
         .insert(animation_player);
+}
+
+fn keyboard_animation_control(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut animation_player: Query<&mut AnimationPlayer2D>,
+    my_assets: Res<MyAssets>,
+    mut current_animation: Local<usize>,
+    mut instructions_printed: Local<bool>,
+) {
+    if let Ok(mut player) = animation_player.get_single_mut() {
+        keyboard_animation_control_helper(
+            &keyboard_input,
+            &mut player,
+            &my_assets.animations,
+            &mut current_animation,
+            &mut instructions_printed,
+        );
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -65,22 +89,4 @@ enum MyStates {
     #[default]
     AssetLoading,
     Next,
-}
-
-fn my_keyboard_animation_control(
-    keyboard_input: Res<Input<KeyCode>>,
-    mut animation_players: Query<&mut AnimationPlayer2D>,
-    my_assets: Res<MyAssets>,
-    mut current_animation: Local<usize>,
-    mut instructions_printed: Local<bool>,
-) {
-    if let Ok(mut animation_player) = animation_players.get_single_mut() {
-        keyboard_animation_control(
-            &keyboard_input,
-            &mut animation_player,
-            &my_assets.animations,
-            &mut current_animation,
-            &mut instructions_printed,
-        );
-    }
 }

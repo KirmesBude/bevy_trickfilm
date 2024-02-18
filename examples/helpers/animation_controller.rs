@@ -1,9 +1,9 @@
 use bevy::{animation::RepeatAnimation, prelude::*};
-use bevy_trickfilm::prelude::*;
+use bevy_trickfilm::{animation::AnimationPlayer2D, asset::AnimationClip2D};
 
-pub fn keyboard_animation_control(
-    keyboard_input: &Input<KeyCode>,
-    animation_player: &mut AnimationPlayer2D,
+pub fn keyboard_animation_control_helper(
+    keyboard_input: &ButtonInput<KeyCode>,
+    player: &mut AnimationPlayer2D,
     animations: &[Handle<AnimationClip2D>],
     current_animation: &mut usize,
     instructions_printed: &mut bool,
@@ -21,56 +21,56 @@ pub fn keyboard_animation_control(
     }
 
     if keyboard_input.just_pressed(KeyCode::Space) {
-        if animation_player.is_paused() {
-            animation_player.resume();
+        if player.is_paused() {
+            player.resume();
         } else {
-            animation_player.pause();
+            player.pause();
         }
     }
 
-    if keyboard_input.just_pressed(KeyCode::Up) {
-        let speed = animation_player.speed();
-        animation_player.set_speed(speed * 1.2);
+    if keyboard_input.just_pressed(KeyCode::ArrowUp) {
+        let speed = player.speed();
+        player.set_speed(speed * 1.2);
     }
 
-    if keyboard_input.just_pressed(KeyCode::Down) {
-        let speed = animation_player.speed();
-        animation_player.set_speed(speed * 0.8);
+    if keyboard_input.just_pressed(KeyCode::ArrowDown) {
+        let speed = player.speed();
+        player.set_speed(speed * 0.8);
     }
 
-    if keyboard_input.just_pressed(KeyCode::Left) {
-        let elapsed = animation_player.seek_time();
-        animation_player.seek_to(elapsed - 0.1);
+    if keyboard_input.just_pressed(KeyCode::ArrowLeft) {
+        let elapsed = player.seek_time();
+        player.seek_to(elapsed - 0.1);
     }
 
-    if keyboard_input.just_pressed(KeyCode::Right) {
-        let elapsed = animation_player.seek_time();
-        animation_player.seek_to(elapsed + 0.1);
+    if keyboard_input.just_pressed(KeyCode::ArrowRight) {
+        let elapsed = player.seek_time();
+        player.seek_to(elapsed + 0.1);
     }
 
-    if keyboard_input.just_pressed(KeyCode::Return) {
+    if keyboard_input.just_pressed(KeyCode::Enter) {
         *current_animation = (*current_animation + 1) % animations.len();
-        animation_player
+        player
             .play(animations[*current_animation].clone_weak())
             .repeat();
     }
 
-    if keyboard_input.just_pressed(KeyCode::Key1) {
-        animation_player.set_repeat(RepeatAnimation::Count(1));
-        animation_player.replay();
+    if keyboard_input.just_pressed(KeyCode::Digit1) {
+        player.set_repeat(RepeatAnimation::Count(1));
+        player.replay();
     }
 
-    if keyboard_input.just_pressed(KeyCode::Key3) {
-        animation_player.set_repeat(RepeatAnimation::Count(3));
-        animation_player.replay();
+    if keyboard_input.just_pressed(KeyCode::Digit3) {
+        player.set_repeat(RepeatAnimation::Count(3));
+        player.replay();
     }
 
-    if keyboard_input.just_pressed(KeyCode::Key5) {
-        animation_player.set_repeat(RepeatAnimation::Count(5));
-        animation_player.replay();
+    if keyboard_input.just_pressed(KeyCode::Digit5) {
+        player.set_repeat(RepeatAnimation::Count(5));
+        player.replay();
     }
 
-    if keyboard_input.just_pressed(KeyCode::L) {
-        animation_player.set_repeat(RepeatAnimation::Forever);
+    if keyboard_input.just_pressed(KeyCode::KeyL) {
+        player.set_repeat(RepeatAnimation::Forever);
     }
 }

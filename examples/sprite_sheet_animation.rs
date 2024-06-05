@@ -34,8 +34,7 @@ fn setup(
     ];
 
     let atlas_texture = asset_server.load("gabe-idle-run.png");
-    let texture_atlas_layout =
-        TextureAtlasLayout::from_grid(Vec2::new(24.0, 24.0), 7, 1, None, None);
+    let texture_atlas_layout = TextureAtlasLayout::from_grid(UVec2::new(24, 24), 7, 1, None, None);
     let texture_atlas = TextureAtlas {
         layout: texture_atlas_layouts.add(texture_atlas_layout),
         ..Default::default()
@@ -53,21 +52,13 @@ fn setup(
 
     // SpriteSheet entity
     commands
-        .spawn(SpriteSheetBundle {
+        .spawn(SpriteBundle {
             transform: Transform::from_scale(Vec3::splat(6.0)),
             texture: atlas_texture,
-            atlas: texture_atlas,
             ..default()
         })
+        .insert(texture_atlas)
         .insert(animation_player);
-
-    println!("Animation controls:");
-    println!("  - spacebar: play / pause");
-    println!("  - arrow up / down: speed up / slow down animation playback");
-    println!("  - arrow left / right: seek backward / forward");
-    println!("  - digit 1 / 3 / 5: play the animation <digit> times");
-    println!("  - L: loop the animation forever");
-    println!("  - return: change animation");
 }
 
 fn keyboard_animation_control(

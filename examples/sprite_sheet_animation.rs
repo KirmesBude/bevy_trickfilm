@@ -55,7 +55,7 @@ fn setup(
         .spawn(SpriteBundle {
             transform: Transform::from_scale(Vec3::splat(6.0)),
             texture: atlas_texture,
-            ..default()
+            ..Default::default()
         })
         .insert(texture_atlas)
         .insert(animation_player);

@@ -8,6 +8,7 @@
 | bevy | bevy_trickfilm |
 |------|----------------|
 | main | main           |
+| 0.14 | 0.7.0          |
 | 0.13 | 0.6.0          |
 | 0.12 | 0.4.0, 0.5.0   |
 | 0.11 | 0.3.0          |
@@ -24,7 +25,7 @@ You can combine this with plugins that add the ability to load a texture atlas f
 
 ```toml, ignore
 # In your Cargo.toml
-bevy_trickfilm = "0.6"
+bevy_trickfilm = "0.7"
 ```
 
 ### animation_clip.trickfilm
@@ -68,12 +69,17 @@ fn setup() {
 }
 
 fn load_texture_atlas(mut commands: Commands) {
-    let texture_atlas_handle = /* Create your TextureAtlas and retrieve a handle to it */;
+    let texture_handle = /* Create your TextureAtlas and retrieve a handle to it */;
+    let layout_handle = /* Create your TextureAtlas and retrieve a handle to it */;
 
     commands
-        .spawn(SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle,
-            ..default()
+        .spawn(SpriteBundle {
+            texture: texture_handle,
+            ..Default::default()
+        })
+        .insert(TextureAtlas {
+            layout: layout_handle,
+            ..Default::default()
         })
         .insert(AnimationPlayer2D::default());
 }

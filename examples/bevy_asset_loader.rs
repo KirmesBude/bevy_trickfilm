@@ -13,8 +13,8 @@ use bevy_trickfilm::prelude::*;
 
 fn main() {
     App::new()
-        .init_state::<MyStates>()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
+        .init_state::<MyStates>()
         .add_plugins(Animation2DPlugin)
         .add_loading_state(
             LoadingState::new(MyStates::AssetLoading)
@@ -31,7 +31,7 @@ fn main() {
 
 #[derive(AssetCollection, Resource)]
 struct MyAssets {
-    #[asset(texture_atlas(tile_size_x = 24., tile_size_y = 24., columns = 7, rows = 1))]
+    #[asset(texture_atlas_layout(tile_size_x = 24, tile_size_y = 24, columns = 8, rows = 1))]
     gabe_layout: Handle<TextureAtlasLayout>,
     #[asset(path = "gabe-idle-run.png")]
     gabe_texture: Handle<Image>,
@@ -54,14 +54,14 @@ fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
 
     // SpriteSheet entity
     commands
-        .spawn(SpriteSheetBundle {
+        .spawn(SpriteBundle {
             transform: Transform::from_scale(Vec3::splat(6.0)),
             texture: my_assets.gabe_texture.clone(),
-            atlas: TextureAtlas {
-                layout: my_assets.gabe_layout.clone(),
-                ..Default::default()
-            },
-            ..default()
+            ..Default::default()
+        })
+        .insert(TextureAtlas {
+            layout: my_assets.gabe_layout.clone(),
+            ..Default::default()
         })
         .insert(animation_player);
 }

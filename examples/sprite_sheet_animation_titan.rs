@@ -53,7 +53,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn(SpriteBundle {
             transform: Transform::from_scale(Vec3::splat(6.0)),
             texture: atlas_texture,
-            ..default()
+            ..Default::default()
         })
         .insert(texture_atlas)
         .insert(animation_player);

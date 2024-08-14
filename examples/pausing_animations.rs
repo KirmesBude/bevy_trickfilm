@@ -1,7 +1,7 @@
 //! This example demonstrates how to pause or resume animations based on the supplied `State`.
 
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
-use bevy_trickfilm::{animation::AnimationPlayer2DSystemSet, prelude::*};
+use bevy_trickfilm::prelude::*;
 
 /// This can also be done as a `SubState` or a `ComputedState`.
 /// We use `app.configure_sets()` to toggle [`AnimationPlayer2DSystemSet`] to
@@ -60,28 +60,9 @@ fn setup(
         })
         .insert(texture_atlas)
         .insert(animation_player);
-    commands
-        .spawn(NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                bottom: Val::Px(15.0),
-                left: Val::Px(15.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        })
-        .with_children(|node| {
-            node.spawn(TextBundle {
-                text: Text::from_section(
-                    "Press SPACE to pause/unpause animation",
-                    TextStyle {
-                        font_size: 24.,
-                        ..Default::default()
-                    },
-                ),
-                ..Default::default()
-            });
-        });
+
+    println!("Pasuing controls:");
+    println!("  - spacebar: play / pause");
 }
 
 fn toggle_animation_pause(

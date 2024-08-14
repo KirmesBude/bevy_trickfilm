@@ -35,3 +35,7 @@ path = "examples/sprite_sheet_animation_titan.rs"
 [[example]]
 name = "bevy_asset_loader"
 path = "examples/bevy_asset_loader.rs"
+
+[[example]]
+name = "pausing_animations"
+path = "examples/pausing_animations.rs"

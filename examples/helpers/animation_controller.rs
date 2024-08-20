@@ -21,7 +21,7 @@ pub fn keyboard_animation_control_helper(
     }
 
     if keyboard_input.just_pressed(KeyCode::Space) {
-        if player.is_paused() {
+        if player.paused() {
             player.resume();
         } else {
             player.pause();
@@ -56,21 +56,21 @@ pub fn keyboard_animation_control_helper(
     }
 
     if keyboard_input.just_pressed(KeyCode::Digit1) {
-        player.set_repeat(RepeatAnimation::Count(1));
+        player.set_repeat_mode(RepeatAnimation::Count(1));
         player.replay();
     }
 
     if keyboard_input.just_pressed(KeyCode::Digit3) {
-        player.set_repeat(RepeatAnimation::Count(3));
+        player.set_repeat_mode(RepeatAnimation::Count(3));
         player.replay();
     }
 
     if keyboard_input.just_pressed(KeyCode::Digit5) {
-        player.set_repeat(RepeatAnimation::Count(5));
+        player.set_repeat_mode(RepeatAnimation::Count(5));
         player.replay();
     }
 
     if keyboard_input.just_pressed(KeyCode::KeyL) {
-        player.set_repeat(RepeatAnimation::Forever);
+        player.set_repeat_mode(RepeatAnimation::Forever);
     }
 }

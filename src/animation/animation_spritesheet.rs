@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy::{
     prelude::{Assets, DetectChanges, Mut, Query, Res},
     sprite::TextureAtlas,
@@ -51,14 +53,21 @@ fn apply_animation_player_spritesheet(
     if let Some(animation_clip) = animation_clips.get(&animation.animation_clip) {
         // We don't return early because seek_to() may have been called on the animation player.
         animation.update(
-            if paused { 0.0 } else { time.delta_seconds() },
+            if paused {
+                Duration::default()
+            } else {
+                time.delta()
+            },
             animation_clip.duration(),
         );
 
         let index = match animation_clip
             .keyframe_timestamps()
-            .binary_search_by(|probe| probe.partial_cmp(&animation.seek_time).unwrap())
-        {
+            .binary_search_by(|probe| {
+                probe
+                    .partial_cmp(&animation.timer.as_ref().unwrap().elapsed_secs())
+                    .unwrap()
+            }) {
             Ok(n) if n >= animation_clip.keyframe_timestamps().len() - 1 => return,
             Ok(i) => i,
             Err(0) => return, // this clip isn't started yet

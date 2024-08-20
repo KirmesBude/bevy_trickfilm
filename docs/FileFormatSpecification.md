@@ -1,4 +1,4 @@
-# Trickfilm file format specification.
+# Trickfilm RON file format specification.
 
 ## Trickfilm
 | Type                           | Necessity | Description |

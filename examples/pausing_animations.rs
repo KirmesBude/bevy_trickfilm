@@ -46,7 +46,7 @@ fn setup(
     commands.spawn(Camera2dBundle::default());
 
     // Prepare AnimationPlayer
-    let animation = asset_server.load("gabe-idle-run.trickfilm#run");
+    let animation = asset_server.load("gabe-idle-run-animation.ron#run");
 
     let mut animation_player = AnimationPlayer2D::default();
     animation_player.play(animation.clone()).repeat();

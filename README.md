@@ -8,7 +8,7 @@
 | bevy | bevy_trickfilm |
 |------|----------------|
 | main | main           |
-| 0.14 | 0.7.0          |
+| 0.14 | 0.7.0, 0.8.0   |
 | 0.13 | 0.6.0          |
 | 0.12 | 0.4.0, 0.5.0   |
 | 0.11 | 0.3.0          |
@@ -25,12 +25,12 @@ You can combine this with plugins that add the ability to load a texture atlas f
 
 ```toml, ignore
 # In your Cargo.toml
-bevy_trickfilm = "0.7"
+bevy_trickfilm = "0.8"
 ```
 
-### animation_clip.trickfilm
+### animation_clip.ron
 ```rust, ignore
-//! A basic example of a trickfilm file.
+//! A basic example of a trickfilm ron file.
 {
     "idle": (
         keyframes: KeyframesRange((start: 0, end: 4)),
@@ -90,7 +90,7 @@ fn play_animation_once_loaded(
     mut players: Query<&mut AnimationPlayer2D, Added<AnimationPlayer2D>>,
 ) {
     for mut player in &mut players {
-        player.start(asset_server.load("animation_clip.trickfilm#idle")).repeat();
+        player.start(asset_server.load("animation_clip.ron#idle")).repeat();
     }
 }
 ```

@@ -27,14 +27,13 @@ struct Animations(Vec<Handle<AnimationClip2D>>);
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Load all animations
     let animations = vec![
-        asset_server.load("gabe-idle-run.trickfilm#run"),
-        asset_server.load("gabe-idle-run.trickfilm#idle"),
+        asset_server.load("gabe-idle-run-animation.ron#run"),
+        asset_server.load("gabe-idle-run-animation.ron#idle"),
     ];
 
-    let atlas_texture =
-        asset_server.load("spritesheet_animation_titan/gabe-idle-run.titan#texture");
+    let atlas_texture = asset_server.load("spritesheet_animation_titan/gabe-idle-run.ron#texture");
     let texture_atlas = TextureAtlas {
-        layout: asset_server.load("spritesheet_animation_titan/gabe-idle-run.titan#layout"),
+        layout: asset_server.load("spritesheet_animation_titan/gabe-idle-run.ron#layout"),
         ..Default::default()
     };
 

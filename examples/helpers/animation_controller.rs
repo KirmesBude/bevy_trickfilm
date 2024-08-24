@@ -12,6 +12,7 @@ pub fn keyboard_animation_control_helper(
         println!("Animation controls:");
         println!("  - spacebar: play / pause");
         println!("  - arrow up / down: speed up / slow down animation playback");
+        println!("  - R: reverse the speed");
         println!("  - arrow left / right: seek backward / forward");
         println!("  - digit 1 / 3 / 5: play the animation <digit> times");
         println!("  - L: loop the animation forever");
@@ -36,6 +37,11 @@ pub fn keyboard_animation_control_helper(
     if keyboard_input.just_pressed(KeyCode::ArrowDown) {
         let speed = player.speed();
         player.set_speed(speed * 0.8);
+    }
+
+    if keyboard_input.just_pressed(KeyCode::KeyR) {
+        let speed = player.speed();
+        player.set_speed(-speed);
     }
 
     if keyboard_input.just_pressed(KeyCode::ArrowLeft) {

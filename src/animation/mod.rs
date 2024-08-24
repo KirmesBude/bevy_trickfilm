@@ -105,9 +105,8 @@ impl PlayingAnimation2D {
         if self.seek_time >= clip_duration {
             self.seek_time %= clip_duration;
         }
-        // Note: assumes delta is never lower than -clip_duration
         if self.seek_time < 0.0 {
-            self.seek_time += clip_duration;
+            self.seek_time = clip_duration - self.seek_time.abs() % clip_duration;
         }
     }
 

@@ -76,8 +76,11 @@ impl AnimationClip2D {
 
         let keyframe_timestamps_max = keyframe_timestamps
             .iter()
-            .max_by(|x, y| x.partial_cmp(y).unwrap())
-            .unwrap();
+            .max_by(|x, y| {
+                x.partial_cmp(y)
+                    .expect("Keyframe timestamps contain elements, that are not comparable.")
+            })
+            .expect("Already covered by AnimationClip2DError::Empty().");
         if let Some(Ordering::Greater) = keyframe_timestamps_max.partial_cmp(&duration) {
             return Err(AnimationClip2DError::InsufficientDuration(
                 *keyframe_timestamps_max,

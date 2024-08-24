@@ -58,7 +58,7 @@ impl PlayingAnimation2D {
     ///
     /// Note: An animation with `RepeatAnimation::Forever` will never finish.
     #[inline]
-    pub fn is_finished(&self) -> bool {
+    pub fn finished(&self) -> bool {
         match self.repeat {
             RepeatAnimation::Forever => false,
             RepeatAnimation::Never => self.completions >= 1,
@@ -69,7 +69,7 @@ impl PlayingAnimation2D {
     /// Update the animation given the delta time and the duration of the clip being played.
     #[inline]
     fn update(&mut self, delta: f32, clip_duration: f32) {
-        if self.is_finished() {
+        if self.finished() {
             return;
         }
 
@@ -82,7 +82,7 @@ impl PlayingAnimation2D {
         if over_time || under_time {
             self.completions += 1;
 
-            if self.is_finished() {
+            if self.finished() {
                 return;
             }
         }
@@ -123,7 +123,7 @@ impl AnimationPlayer2D {
 
     /// Start playing an animation, resetting state of the player, unless the requested animation is already playing.
     pub fn play(&mut self, handle: Handle<AnimationClip2D>) -> &mut Self {
-        if self.animation.animation_clip != handle || self.is_paused() {
+        if self.animation.animation_clip != handle || self.paused() {
             self.start(handle);
         }
         self
@@ -135,13 +135,13 @@ impl AnimationPlayer2D {
     }
 
     /// Check if the given animation clip is being played.
-    pub fn is_playing_clip(&self, handle: &Handle<AnimationClip2D>) -> bool {
+    pub fn clip_played(&self, handle: &Handle<AnimationClip2D>) -> bool {
         self.animation_clip() == handle
     }
 
     /// Check if the playing animation has finished, according to the repetition behavior.
-    pub fn is_finished(&self) -> bool {
-        self.animation.is_finished()
+    pub fn finished(&self) -> bool {
+        self.animation.finished()
     }
 
     /// Sets repeat to [`RepeatAnimation::Forever`].
@@ -153,7 +153,7 @@ impl AnimationPlayer2D {
     }
 
     /// Set the repetition behaviour of the animation.
-    pub fn set_repeat(&mut self, repeat: RepeatAnimation) -> &mut Self {
+    pub fn set_repeat_mode(&mut self, repeat: RepeatAnimation) -> &mut Self {
         self.animation.repeat = repeat;
         self
     }
@@ -169,7 +169,7 @@ impl AnimationPlayer2D {
     }
 
     /// Check if the animation is playing in reverse.
-    pub fn is_playback_reversed(&self) -> bool {
+    pub fn reversed(&self) -> bool {
         self.animation.speed < 0.0
     }
 
@@ -184,7 +184,7 @@ impl AnimationPlayer2D {
     }
 
     /// Is the animation paused
-    pub fn is_paused(&self) -> bool {
+    pub fn paused(&self) -> bool {
         self.paused
     }
 

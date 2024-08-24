@@ -93,25 +93,24 @@ impl PlayingAnimation2D {
         self.elapsed += delta;
         self.seek_time += delta * self.speed;
 
-        let over_time = self.speed > 0.0 && self.seek_time >= clip_duration;
-        let under_time = self.speed < 0.0 && self.seek_time < 0.0;
+        // We determine the number of completions this update based on the seek_time and clip_duration.
+        // For negative speeds where seek_time becomes negative, we need to consider that anything below 0.0 is already a completion.
+        let quotient = (self.seek_time.abs() / clip_duration) as u32;
+        self.completions_this_update = quotient + if self.seek_time < 0.0 { 1 } else { 0 };
+        self.completions += self.completions_this_update;
 
-        if over_time || under_time {
-            self.completions_this_update =
-                (self.seek_time.abs() / clip_duration) as u32 + if under_time { 1 } else { 0 };
-            self.completions += self.completions_this_update;
-        }
-
+        // Clamp the seek_time to [0.0, clip_duration].
+        let modulo = self.seek_time.abs() % clip_duration;
         if self.seek_time >= clip_duration {
-            self.seek_time %= clip_duration;
-        }
-        if self.seek_time < 0.0 {
-            self.seek_time = clip_duration - self.seek_time.abs() % clip_duration;
+            self.seek_time = modulo;
+        } else if self.seek_time < 0.0 {
+            self.seek_time = clip_duration - modulo;
         }
     }
 
     /// Reset back to the initial state as if no time has elapsed.
     fn replay(&mut self) {
+        self.completions_this_update = 0;
         self.completions = 0;
         self.elapsed = 0.0;
         self.seek_time = 0.0;

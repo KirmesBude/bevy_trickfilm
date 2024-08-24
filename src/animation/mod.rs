@@ -68,7 +68,7 @@ impl PlayingAnimation2D {
         }
     }
 
-    /// Check if the animation has just finished, based on its repetition behavior and the number of times it has repeated.
+    /// Check if the animation has just finished.
     ///
     /// Note: This needs to be called in the `bevy_app::main_schedule::Update` schedule.
     #[inline]
@@ -160,7 +160,7 @@ impl AnimationPlayer2D {
         self.animation.finished()
     }
 
-    /// Check if the playing animation has just finished, according to the repetition behavior.
+    /// Check if the playing animation has just finished.
     ///
     /// Note: This needs to be called in the `bevy_app::main_schedule::Update` schedule.
     pub fn just_finished(&self) -> bool {

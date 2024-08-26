@@ -68,18 +68,21 @@ impl PlayingAnimation2D {
         }
     }
 
-    /// Check if the animation has just finished.
+    /// Check if the animation has just finished, based on its repetition behavior and the number of times it has repeated.
     ///
+    /// Note: An animation with `RepeatAnimation::Forever` will never finish.
     /// Note: This needs to be called in the `bevy_app::main_schedule::Update` schedule.
     #[inline]
     pub fn just_finished(&self) -> bool {
-        self.completions_this_update > 0
+        self.finished() && self.just_finished_cycle()
     }
 
-    /// How many completions the animation had this update.
+    /// Check if the animation has just finished a cycle.
+    ///
+    /// Note: This needs to be called in the `bevy_app::main_schedule::Update` schedule.
     #[inline]
-    pub fn completions_this_update(&self) -> u32 {
-        self.completions_this_update
+    pub fn just_finished_cycle(&self) -> bool {
+        self.completions_this_update > 0
     }
 
     /// Update the animation given the delta time and the duration of the clip being played.
@@ -160,17 +163,30 @@ impl AnimationPlayer2D {
         self.animation.finished()
     }
 
-    /// Check if the playing animation has just finished.
+    /// Check if the playing animation has just finished, according to the repetition behavior.
     ///
+    /// Note: An animation with `RepeatAnimation::Forever` will never finish.
     /// Note: This needs to be called in the `bevy_app::main_schedule::Update` schedule.
     pub fn just_finished(&self) -> bool {
         self.animation.just_finished()
     }
 
+    /// Check if the playing animation has just finished a cycle.
+    ///
+    /// Note: This needs to be called in the `bevy_app::main_schedule::Update` schedule.
+    pub fn just_finished_cycle(&self) -> bool {
+        self.animation.just_finished_cycle()
+    }
+
+    /// Number of times the animation has completed.
+    pub fn completions(&self) -> u32 {
+        self.animation.completions
+    }
+
     /// How many completions the playing animation had this update.
     #[inline]
     pub fn completions_this_update(&self) -> u32 {
-        self.animation.completions_this_update()
+        self.animation.completions_this_update
     }
 
     /// Sets repeat to [`RepeatAnimation::Forever`].
@@ -190,11 +206,6 @@ impl AnimationPlayer2D {
     /// Repetition behavior of the animation.
     pub fn repeat_mode(&self) -> RepeatAnimation {
         self.animation.repeat
-    }
-
-    /// Number of times the animation has completed.
-    pub fn completions(&self) -> u32 {
-        self.animation.completions
     }
 
     /// Check if the animation is playing in reverse.

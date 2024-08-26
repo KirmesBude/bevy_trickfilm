@@ -109,6 +109,12 @@ impl PlayingAnimation2D {
         } else if self.seek_time < 0.0 {
             self.seek_time = clip_duration - modulo;
         }
+
+        // If the animation is finished, we might not end up at the last frame if the delta step was too big.
+        // Make sure that we have the last frame in that case
+        if self.finished() {
+            self.seek_time = clip_duration;
+        }
     }
 
     /// Reset back to the initial state as if no time has elapsed.

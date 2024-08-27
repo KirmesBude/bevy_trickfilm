@@ -23,7 +23,9 @@ pub struct AnimationPlayer2DPlugin;
 
 impl Plugin for AnimationPlayer2DPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<AnimationPlayer2D>().add_systems(
+        app.register_type::<AnimationPlayer2D>()
+            .register_type::<PlayingAnimation2D>();
+        app.add_systems(
             Update,
             animation_player_spritesheet.in_set(AnimationPlayer2DSystemSet),
         );
@@ -38,6 +40,7 @@ struct PlayingAnimation2D {
     seek_time: f32,
     animation_clip: Handle<AnimationClip2D>,
     completions: u32,
+    completions_this_update: u32,
 }
 
 impl Default for PlayingAnimation2D {
@@ -49,16 +52,17 @@ impl Default for PlayingAnimation2D {
             seek_time: 0.0,
             animation_clip: Default::default(),
             completions: 0,
+            completions_this_update: 0,
         }
     }
 }
 
 impl PlayingAnimation2D {
-    /// Check if the animation has finished, based on its repetition behavior and the number of times it has repeated.
+    /// Check if the playing animation has finished, according to [`RepeatAnimation`] repetition behavior.
     ///
-    /// Note: An animation with `RepeatAnimation::Forever` will never finish.
+    /// Note: An animation with [`RepeatAnimation::Forever`] will never finish.
     #[inline]
-    pub fn is_finished(&self) -> bool {
+    pub fn finished(&self) -> bool {
         match self.repeat {
             RepeatAnimation::Forever => false,
             RepeatAnimation::Never => self.completions >= 1,
@@ -66,37 +70,60 @@ impl PlayingAnimation2D {
         }
     }
 
+    /// Check if the playing animation has just finished, according to [`RepeatAnimation`] repetition behavior.
+    ///
+    /// Note: An animation with [`RepeatAnimation::Forever`] will never finish.
+    /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.
+    #[inline]
+    pub fn just_finished(&self) -> bool {
+        self.finished() && self.just_finished_cycle()
+    }
+
+    /// Check if the playing animation has just finished a cycle.
+    ///
+    /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.
+    #[inline]
+    pub fn just_finished_cycle(&self) -> bool {
+        self.completions_this_update > 0
+    }
+
     /// Update the animation given the delta time and the duration of the clip being played.
     #[inline]
     fn update(&mut self, delta: f32, clip_duration: f32) {
-        if self.is_finished() {
+        self.completions_this_update = 0;
+        if self.finished() {
             return;
         }
 
         self.elapsed += delta;
         self.seek_time += delta * self.speed;
 
-        let over_time = self.speed > 0.0 && self.seek_time >= clip_duration;
-        let under_time = self.speed < 0.0 && self.seek_time < 0.0;
+        // We determine the number of completions this update based on the seek_time and clip_duration.
+        // For negative speeds where seek_time becomes negative, we need to consider that anything below 0.0 is already a completion.
+        let quotient = (self.seek_time.abs() / clip_duration) as u32;
+        self.completions_this_update = quotient + if self.seek_time < 0.0 { 1 } else { 0 };
+        self.completions += self.completions_this_update;
 
-        if over_time || under_time {
-            self.completions += 1;
-
-            if self.is_finished() {
-                return;
-            }
-        }
+        // Clamp the seek_time to [0.0, clip_duration].
+        let modulo = self.seek_time.abs() % clip_duration;
         if self.seek_time >= clip_duration {
-            self.seek_time %= clip_duration;
+            self.seek_time = modulo;
+        } else if self.seek_time < 0.0 {
+            self.seek_time = clip_duration - modulo;
         }
-        // Note: assumes delta is never lower than -clip_duration
-        if self.seek_time < 0.0 {
-            self.seek_time += clip_duration;
+
+        // If the animation is finished, we might not end up at the last frame if the delta step was too big.
+        // Make sure that we have the last frame in that case
+        if self.finished() {
+            self.seek_time = clip_duration;
         }
     }
 
     /// Reset back to the initial state as if no time has elapsed.
     fn replay(&mut self) {
+        self.completions_this_update = 0;
         self.completions = 0;
         self.elapsed = 0.0;
         self.seek_time = 0.0;
@@ -123,7 +150,7 @@ impl AnimationPlayer2D {
 
     /// Start playing an animation, resetting state of the player, unless the requested animation is already playing.
     pub fn play(&mut self, handle: Handle<AnimationClip2D>) -> &mut Self {
-        if self.animation.animation_clip != handle || self.is_paused() {
+        if self.animation.animation_clip != handle || self.paused() {
             self.start(handle);
         }
         self
@@ -134,26 +161,56 @@ impl AnimationPlayer2D {
         &self.animation.animation_clip
     }
 
-    /// Check if the given animation clip is being played.
-    pub fn is_playing_clip(&self, handle: &Handle<AnimationClip2D>) -> bool {
+    /// Check if the given animation clip is playing.
+    pub fn clip_playing(&self, handle: &Handle<AnimationClip2D>) -> bool {
         self.animation_clip() == handle
     }
 
-    /// Check if the playing animation has finished, according to the repetition behavior.
-    pub fn is_finished(&self) -> bool {
-        self.animation.is_finished()
+    /// Check if the playing animation has finished, according to [`RepeatAnimation`] repetition behavior.
+    ///
+    /// Note: An animation with [`RepeatAnimation::Forever`] will never finish.
+    pub fn finished(&self) -> bool {
+        self.animation.finished()
+    }
+
+    /// Check if the playing animation has just finished, according to [`RepeatAnimation`] repetition behavior.
+    ///  
+    /// Note: An animation with [`RepeatAnimation::Forever`] will never finish.  
+    /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.  
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.  
+    pub fn just_finished(&self) -> bool {
+        self.animation.just_finished()
+    }
+
+    /// Check if the playing animation has just finished a cycle.
+    ///  
+    /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.  
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.  
+    pub fn just_finished_cycle(&self) -> bool {
+        self.animation.just_finished_cycle()
+    }
+
+    /// Number of times the animation has completed.
+    pub fn completions(&self) -> u32 {
+        self.animation.completions
+    }
+
+    /// How many completions the playing animation had this update.
+    #[inline]
+    pub fn completions_this_update(&self) -> u32 {
+        self.animation.completions_this_update
     }
 
     /// Sets repeat to [`RepeatAnimation::Forever`].
     ///
-    /// See also [`Self::set_repeat`].
+    /// See also [`Self::set_repeat_mode`].
     pub fn repeat(&mut self) -> &mut Self {
         self.animation.repeat = RepeatAnimation::Forever;
         self
     }
 
     /// Set the repetition behaviour of the animation.
-    pub fn set_repeat(&mut self, repeat: RepeatAnimation) -> &mut Self {
+    pub fn set_repeat_mode(&mut self, repeat: RepeatAnimation) -> &mut Self {
         self.animation.repeat = repeat;
         self
     }
@@ -163,13 +220,8 @@ impl AnimationPlayer2D {
         self.animation.repeat
     }
 
-    /// Number of times the animation has completed.
-    pub fn completions(&self) -> u32 {
-        self.animation.completions
-    }
-
     /// Check if the animation is playing in reverse.
-    pub fn is_playback_reversed(&self) -> bool {
+    pub fn reversed(&self) -> bool {
         self.animation.speed < 0.0
     }
 
@@ -184,7 +236,7 @@ impl AnimationPlayer2D {
     }
 
     /// Is the animation paused
-    pub fn is_paused(&self) -> bool {
+    pub fn paused(&self) -> bool {
         self.paused
     }
 
@@ -200,11 +252,13 @@ impl AnimationPlayer2D {
     }
 
     /// Time elapsed playing the animation
+    ///
+    /// Note: This is independent of speed.
     pub fn elapsed(&self) -> f32 {
         self.animation.elapsed
     }
 
-    /// Seek time inside of the animation. Always within the range [0.0, clip duration].
+    /// Seek time inside of the animation. Always within the range [0.0, clip_duration].
     pub fn seek_time(&self) -> f32 {
         self.animation.seek_time
     }

@@ -57,8 +57,11 @@ fn apply_animation_player_spritesheet(
 
         let index = match animation_clip
             .keyframe_timestamps()
-            .binary_search_by(|probe| probe.partial_cmp(&animation.seek_time).unwrap())
-        {
+            .binary_search_by(|probe| {
+                probe
+                    .partial_cmp(&animation.seek_time)
+                    .expect("Keyframe timestamps contain elements, that are not comparable.")
+            }) {
             Ok(n) if n >= animation_clip.keyframe_timestamps().len() - 1 => return,
             Ok(i) => i,
             Err(0) => return, // this clip isn't started yet

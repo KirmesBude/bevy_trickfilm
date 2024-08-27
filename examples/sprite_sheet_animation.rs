@@ -29,8 +29,8 @@ fn setup(
 ) {
     // Load all animations
     let animations = vec![
-        asset_server.load("gabe-idle-run.trickfilm#run"),
-        asset_server.load("gabe-idle-run.trickfilm#idle"),
+        asset_server.load("gabe-idle-run-animation.ron#run"),
+        asset_server.load("gabe-idle-run-animation.ron#idle"),
     ];
 
     let atlas_texture = asset_server.load("gabe-idle-run.png");

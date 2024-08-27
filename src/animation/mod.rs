@@ -23,7 +23,9 @@ pub struct AnimationPlayer2DPlugin;
 
 impl Plugin for AnimationPlayer2DPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<AnimationPlayer2D>().add_systems(
+        app.register_type::<AnimationPlayer2D>()
+            .register_type::<PlayingAnimation2D>();
+        app.add_systems(
             Update,
             animation_player_spritesheet.in_set(AnimationPlayer2DSystemSet),
         );
@@ -56,9 +58,9 @@ impl Default for PlayingAnimation2D {
 }
 
 impl PlayingAnimation2D {
-    /// Check if the animation has finished, based on its repetition behavior and the number of times it has repeated.
+    /// Check if the playing animation has finished, according to [`RepeatAnimation`] repetition behavior.
     ///
-    /// Note: An animation with `RepeatAnimation::Forever` will never finish.
+    /// Note: An animation with [`RepeatAnimation::Forever`] will never finish.
     #[inline]
     pub fn finished(&self) -> bool {
         match self.repeat {
@@ -68,18 +70,20 @@ impl PlayingAnimation2D {
         }
     }
 
-    /// Check if the animation has just finished, based on its repetition behavior and the number of times it has repeated.
+    /// Check if the playing animation has just finished, according to [`RepeatAnimation`] repetition behavior.
     ///
-    /// Note: An animation with `RepeatAnimation::Forever` will never finish.
-    /// Note: This needs to be called in the `bevy_app::main_schedule::Update` schedule.
+    /// Note: An animation with [`RepeatAnimation::Forever`] will never finish.
+    /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.
     #[inline]
     pub fn just_finished(&self) -> bool {
         self.finished() && self.just_finished_cycle()
     }
 
-    /// Check if the animation has just finished a cycle.
+    /// Check if the playing animation has just finished a cycle.
     ///
-    /// Note: This needs to be called in the `bevy_app::main_schedule::Update` schedule.
+    /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.
     #[inline]
     pub fn just_finished_cycle(&self) -> bool {
         self.completions_this_update > 0
@@ -157,29 +161,31 @@ impl AnimationPlayer2D {
         &self.animation.animation_clip
     }
 
-    /// Check if the given animation clip is being played.
-    pub fn clip_played(&self, handle: &Handle<AnimationClip2D>) -> bool {
+    /// Check if the given animation clip is playing.
+    pub fn clip_playing(&self, handle: &Handle<AnimationClip2D>) -> bool {
         self.animation_clip() == handle
     }
 
-    /// Check if the playing animation has finished, according to the repetition behavior.
+    /// Check if the playing animation has finished, according to [`RepeatAnimation`] repetition behavior.
     ///
-    /// Note: An animation with `RepeatAnimation::Forever` will never finish.
+    /// Note: An animation with [`RepeatAnimation::Forever`] will never finish.
     pub fn finished(&self) -> bool {
         self.animation.finished()
     }
 
-    /// Check if the playing animation has just finished, according to the repetition behavior.
-    ///
-    /// Note: An animation with `RepeatAnimation::Forever` will never finish.
-    /// Note: This needs to be called in the `bevy_app::main_schedule::Update` schedule.
+    /// Check if the playing animation has just finished, according to [`RepeatAnimation`] repetition behavior.
+    ///  
+    /// Note: An animation with [`RepeatAnimation::Forever`] will never finish.  
+    /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.  
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.  
     pub fn just_finished(&self) -> bool {
         self.animation.just_finished()
     }
 
     /// Check if the playing animation has just finished a cycle.
-    ///
-    /// Note: This needs to be called in the `bevy_app::main_schedule::Update` schedule.
+    ///  
+    /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.  
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.  
     pub fn just_finished_cycle(&self) -> bool {
         self.animation.just_finished_cycle()
     }
@@ -197,7 +203,7 @@ impl AnimationPlayer2D {
 
     /// Sets repeat to [`RepeatAnimation::Forever`].
     ///
-    /// See also [`Self::set_repeat`].
+    /// See also [`Self::set_repeat_mode`].
     pub fn repeat(&mut self) -> &mut Self {
         self.animation.repeat = RepeatAnimation::Forever;
         self
@@ -252,7 +258,7 @@ impl AnimationPlayer2D {
         self.animation.elapsed
     }
 
-    /// Seek time inside of the animation. Always within the range [0.0, clip duration].
+    /// Seek time inside of the animation. Always within the range [0.0, clip_duration].
     pub fn seek_time(&self) -> f32 {
         self.animation.seek_time
     }

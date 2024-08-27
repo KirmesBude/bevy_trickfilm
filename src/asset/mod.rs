@@ -6,6 +6,7 @@
 
 use std::cmp::Ordering;
 
+use asset_loader::{TrickfilmEntry, TrickfilmEntryKeyframes};
 use bevy::{
     prelude::{App, Asset, AssetApp, Handle, Plugin},
     reflect::Reflect,
@@ -22,6 +23,10 @@ pub struct Animation2DLoaderPlugin;
 
 impl Plugin for Animation2DLoaderPlugin {
     fn build(&self, app: &mut App) {
+        app.register_type::<AnimationClip2D>()
+            .register_type::<AnimationClip2DSet>()
+            .register_type::<TrickfilmEntryKeyframes>()
+            .register_type::<TrickfilmEntry>();
         app.init_asset::<AnimationClip2D>()
             .init_asset::<AnimationClip2DSet>()
             .init_asset_loader::<Animation2DLoader>();

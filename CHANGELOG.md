@@ -1,6 +1,6 @@
 v0.8.0
 ================================================================================================================================
-Support and recommend .ron file extension, .trickfilm still works, but is no longer recommended.
+Support and recommend .trickfilm.ron file extension, .trickfilm still works, but is no longer recommended.
 Reworked public facing API and internal behaviour.
 Quick migration guide:
 is_playing_clip -> clip_playing

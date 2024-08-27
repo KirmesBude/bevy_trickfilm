@@ -28,7 +28,7 @@ You can combine this with plugins that add the ability to load a texture atlas f
 bevy_trickfilm = "0.8"
 ```
 
-### animation_clip.ron
+### animation_clip.trickfilm.ron
 ```rust, ignore
 //! A basic example of a trickfilm ron file.
 {
@@ -90,7 +90,7 @@ fn play_animation_once_loaded(
     mut players: Query<&mut AnimationPlayer2D, Added<AnimationPlayer2D>>,
 ) {
     for mut player in &mut players {
-        player.start(asset_server.load("animation_clip.ron#idle")).repeat();
+        player.start(asset_server.load("animation_clip.trickfilm.ron#idle")).repeat();
     }
 }
 ```

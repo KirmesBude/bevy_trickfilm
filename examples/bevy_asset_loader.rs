@@ -36,7 +36,10 @@ struct MyAssets {
     #[asset(path = "gabe-idle-run.png")]
     gabe_texture: Handle<Image>,
     #[asset(
-        paths("gabe-idle-run-animation.ron#run", "gabe-idle-run-animation.ron#idle"),
+        paths(
+            "gabe-idle-run-animation.trickfilm.ron#run",
+            "gabe-idle-run-animation.trickfilm.ron#idle"
+        ),
         collection(typed)
     )]
     animations: Vec<Handle<AnimationClip2D>>,

@@ -63,7 +63,7 @@ pub(crate) struct TrickfilmEntry {
 }
 
 /// File extension for spritesheet animation manifest files written in ron.
-const FILE_EXTENSIONS: &[&str] = &["ron", "trickfilm"];
+const FILE_EXTENSIONS: &[&str] = &["trickfilm.ron", "trickfilm"];
 
 impl AssetLoader for Animation2DLoader {
     type Asset = AnimationClip2DSet;

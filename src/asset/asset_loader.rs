@@ -6,6 +6,7 @@ use std::ops::Range;
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
     prelude::Handle,
+    reflect::Reflect,
     utils::HashMap,
 };
 use serde::Deserialize;
@@ -32,8 +33,8 @@ pub enum Animation2DLoaderError {
 }
 
 /// Declaration of the deserialized variant for the animation frame indices.
-#[derive(Debug, Deserialize)]
-enum TrickfilmEntryKeyframes {
+#[derive(Debug, Deserialize, Reflect)]
+pub(crate) enum TrickfilmEntryKeyframes {
     /// You can specify the index of each frame seperately.
     KeyframesVec(Vec<usize>),
     /// Use this, if the animation frames of an animation have continuous indices.
@@ -50,8 +51,8 @@ impl From<TrickfilmEntryKeyframes> for Vec<usize> {
 }
 
 /// Representation of a loaded trickfilm file.
-#[derive(Debug, Deserialize)]
-struct TrickfilmEntry {
+#[derive(Debug, Deserialize, Reflect)]
+pub(crate) struct TrickfilmEntry {
     /// Keyframes of this animation
     keyframes: TrickfilmEntryKeyframes,
     /// Keyframe timestamps for this animation

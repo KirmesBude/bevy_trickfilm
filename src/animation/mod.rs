@@ -37,6 +37,7 @@ struct PlayingAnimation2D {
     repeat: RepeatAnimation,
     speed: f32,
     elapsed: f32,
+    frame: usize,
     seek_time: f32,
     animation_clip: Handle<AnimationClip2D>,
     completions: u32,
@@ -49,6 +50,7 @@ impl Default for PlayingAnimation2D {
             repeat: Default::default(),
             speed: 1.0,
             elapsed: 0.0,
+            frame: 0,
             seek_time: 0.0,
             animation_clip: Default::default(),
             completions: 0,
@@ -256,6 +258,13 @@ impl AnimationPlayer2D {
     /// Note: This is independent of speed.
     pub fn elapsed(&self) -> f32 {
         self.animation.elapsed
+    }
+
+    /// Current frame of the animation
+    ///
+    /// This will be the same value as the index of the current animation in the spritesheet.
+    pub fn frame(&self) -> usize {
+        self.animation.frame
     }
 
     /// Seek time inside of the animation. Always within the range [0.0, clip_duration].

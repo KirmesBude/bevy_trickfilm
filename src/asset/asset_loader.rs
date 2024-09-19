@@ -4,7 +4,7 @@
 use std::ops::Range;
 
 use bevy::{
-    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
+    asset::{io::Reader, AssetLoader, LoadContext},
     prelude::Handle,
     reflect::Reflect,
     utils::HashMap,
@@ -72,7 +72,7 @@ impl AssetLoader for Animation2DLoader {
 
     async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader<'_>,
+        reader: &'a mut dyn Reader,
         _settings: &'a (),
         load_context: &'a mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {

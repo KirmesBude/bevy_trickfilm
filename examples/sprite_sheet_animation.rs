@@ -10,8 +10,15 @@ use animation_helper::keyboard_animation_control_helper;
 use bevy::prelude::*;
 use bevy_trickfilm::prelude::*;
 
-fn my_test_callback() {
-    println!("lol");
+fn my_test_callback(old_player: &AnimationPlayer2D, player: &AnimationPlayer2D) {
+    if player.just_finished_cycle() {
+        println!("finished cycle");
+    }
+    if ((old_player.seek_time() / 0.1) as u32) < ((player.seek_time() / 0.1) as u32)
+        || old_player.seek_time() > player.seek_time()
+    {
+        println!("{}", player.seek_time());
+    }
 }
 
 fn main() {

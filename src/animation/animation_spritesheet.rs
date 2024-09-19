@@ -7,7 +7,7 @@ use bevy::{
 
 use crate::asset::AnimationClip2D;
 
-use super::{AnimationPlayer2D, PlayingAnimation2D};
+use super::AnimationPlayer2D;
 
 /// System that will play all spritesheet animations, using any entity with an [`AnimationPlayer2D`]
 /// and a [`Handle<AnimationClip2D>`] as an animation root.
@@ -36,7 +36,7 @@ fn run_animation_player_spritesheet(
     apply_animation_player_spritesheet(
         time,
         animation_clips,
-        &mut player.animation,
+        &mut player,
         paused,
         &mut texture_atlas.index,
     );
@@ -45,10 +45,12 @@ fn run_animation_player_spritesheet(
 fn apply_animation_player_spritesheet(
     time: &Time,
     animation_clips: &Assets<AnimationClip2D>,
-    animation: &mut PlayingAnimation2D,
+    player: &mut AnimationPlayer2D,
     paused: bool,
     texture_atlas_index: &mut usize,
 ) {
+    let old_player = player.clone();
+    let animation = &mut player.animation;
     if let Some(animation_clip) = animation_clips.get(&animation.animation_clip) {
         // We don't return early because seek_to() may have been called on the animation player.
         animation.update(
@@ -72,7 +74,7 @@ fn apply_animation_player_spritesheet(
 
         // User callbacks
         for callback in animation_clip.callbacks() {
-            let args = ArgList::new();
+            let args = ArgList::new().push_ref(&old_player).push_ref(player);
             callback.call(args).unwrap(); // TODO: Proper error handling
         }
 

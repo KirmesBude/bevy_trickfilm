@@ -130,7 +130,7 @@ impl PlayingAnimation2D {
 }
 
 /// Animation controls
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Default, Reflect, Clone)]
 #[reflect(Component)]
 pub struct AnimationPlayer2D {
     paused: bool,

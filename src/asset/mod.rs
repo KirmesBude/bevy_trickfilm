@@ -8,8 +8,9 @@ use std::cmp::Ordering;
 
 use asset_loader::{TrickfilmEntry, TrickfilmEntryKeyframes};
 use bevy::{
+    asset::ErasedAssetLoader,
     prelude::{App, Asset, AssetApp, Handle, Plugin},
-    reflect::{func::FunctionRegistry, Reflect},
+    reflect::{func::DynamicFunction, Reflect},
     utils::HashMap,
 };
 use thiserror::Error;
@@ -43,7 +44,8 @@ pub struct AnimationClip2D {
     /// Total duration of this animation clip in seconds.
     duration: f32,
     /// User defined callbacks
-    callbacks: Vec<String>, // TODO: Can this already be DynamicFunction?
+    #[reflect(ignore)]
+    callbacks: Vec<DynamicFunction<'static>>, // TODO: Can this be a reference instead of DynamicFunction?
 }
 
 /// Possible errors that can be produced by [`AnimationClip2D`]
@@ -70,8 +72,7 @@ impl AnimationClip2D {
         keyframe_timestamps: Vec<f32>,
         keyframes: Vec<usize>,
         duration: f32,
-        callbacks: Vec<String>,
-        function_registry: &FunctionRegistry,
+        callbacks: Vec<&DynamicFunction<'static>>,
     ) -> Result<Self, AnimationClip2DError> {
         let keyframe_timestamps_len = keyframe_timestamps.len();
         let keyframes_len = keyframes.len();
@@ -102,9 +103,15 @@ impl AnimationClip2D {
 
         let callbacks: Result<Vec<_>, _> = callbacks
             .into_iter()
-            .map(|callback| match function_registry.get(&callback) {
-                Some(_) => Ok(callback),
-                None => Err(AnimationClip2DError::CallbackNotRegistered(callback)),
+            .map(|callback| {
+                if callback.info().return_info().type_id() == ().type_id() {
+                    // TODO: More verification regardin args
+                    Ok(callback.clone())
+                } else {
+                    Err(AnimationClip2DError::CallbackNotRegistered(
+                        callback.info().name().unwrap().to_string(),
+                    ))
+                }
             })
             .collect();
 
@@ -136,7 +143,7 @@ impl AnimationClip2D {
 
     /// User callbacks of this animation clip.
     #[inline]
-    pub fn callbacks(&self) -> &[String] {
+    pub fn callbacks(&self) -> &[DynamicFunction<'static>] {
         &self.callbacks
     }
 }

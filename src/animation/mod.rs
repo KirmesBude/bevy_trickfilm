@@ -6,9 +6,8 @@ mod animation_spritesheet;
 use crate::prelude::AnimationClip2D;
 use bevy::{
     animation::RepeatAnimation,
-    prelude::{
-        App, Component, Handle, IntoSystemConfigs, Plugin, ReflectComponent, SystemSet, Update,
-    },
+    app::PostUpdate,
+    prelude::{App, Component, Handle, IntoSystemConfigs, Plugin, ReflectComponent, SystemSet},
     reflect::Reflect,
 };
 
@@ -26,13 +25,13 @@ impl Plugin for AnimationPlayer2DPlugin {
         app.register_type::<AnimationPlayer2D>()
             .register_type::<PlayingAnimation2D>();
         app.add_systems(
-            Update,
+            PostUpdate,
             animation_player_spritesheet.in_set(AnimationPlayer2DSystemSet),
         );
     }
 }
 
-#[derive(Reflect)]
+#[derive(Reflect, Clone)]
 struct PlayingAnimation2D {
     repeat: RepeatAnimation,
     speed: f32,

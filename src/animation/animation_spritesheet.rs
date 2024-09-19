@@ -1,5 +1,6 @@
 use bevy::{
-    prelude::{Assets, DetectChanges, Mut, Query, Res},
+    prelude::{AppFunctionRegistry, Assets, DetectChanges, Mut, Query, Res},
+    reflect::func::{ArgList, FunctionRegistry},
     sprite::TextureAtlas,
     time::Time,
 };
@@ -14,9 +15,16 @@ pub(crate) fn animation_player_spritesheet(
     time: Res<Time>,
     animation_clips: Res<Assets<AnimationClip2D>>,
     mut query: Query<(&mut AnimationPlayer2D, &mut TextureAtlas)>,
+    function_registry: Res<AppFunctionRegistry>,
 ) {
     query.par_iter_mut().for_each(|(player, sprite)| {
-        run_animation_player_spritesheet(&time, &animation_clips, player, sprite);
+        run_animation_player_spritesheet(
+            &time,
+            &animation_clips,
+            player,
+            sprite,
+            &function_registry.read(),
+        );
     });
 }
 
@@ -25,6 +33,7 @@ fn run_animation_player_spritesheet(
     animation_clips: &Assets<AnimationClip2D>,
     mut player: Mut<AnimationPlayer2D>,
     mut texture_atlas: Mut<TextureAtlas>,
+    function_registry: &FunctionRegistry,
 ) {
     // Allow manual update of elapsed when paused
     let paused = player.paused;
@@ -38,6 +47,7 @@ fn run_animation_player_spritesheet(
         &mut player.animation,
         paused,
         &mut texture_atlas.index,
+        function_registry,
     );
 }
 
@@ -47,6 +57,7 @@ fn apply_animation_player_spritesheet(
     animation: &mut PlayingAnimation2D,
     paused: bool,
     texture_atlas_index: &mut usize,
+    function_registry: &FunctionRegistry,
 ) {
     if let Some(animation_clip) = animation_clips.get(&animation.animation_clip) {
         // We don't return early because seek_to() may have been called on the animation player.
@@ -68,6 +79,12 @@ fn apply_animation_player_spritesheet(
             Err(n) if n > animation_clip.keyframe_timestamps().len() => return,
             Err(i) => i - 1,
         };
+
+        // User callbacks
+        for callback in animation_clip.callbacks() {
+            let args = ArgList::new();
+            function_registry.get(callback).unwrap().call(args).unwrap(); // TODO: Proper error handling
+        }
 
         let keyframes = animation_clip.keyframes();
         *texture_atlas_index = keyframes[index]

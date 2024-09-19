@@ -10,12 +10,17 @@ use animation_helper::keyboard_animation_control_helper;
 use bevy::prelude::*;
 use bevy_trickfilm::prelude::*;
 
+fn my_test_callback() {
+    println!("lol");
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(Animation2DPlugin)
         .add_systems(Startup, setup)
         .add_systems(Update, keyboard_animation_control)
+        .register_function(my_test_callback)
         .run();
 }
 
@@ -26,6 +31,7 @@ fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    function_registry: Res<AppFunctionRegistry>,
 ) {
     // Load all animations
     let animations = vec![
@@ -59,6 +65,8 @@ fn setup(
         })
         .insert(texture_atlas)
         .insert(animation_player);
+
+    println!("{:?}", function_registry.read());
 }
 
 fn keyboard_animation_control(

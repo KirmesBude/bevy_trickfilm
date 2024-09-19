@@ -5,7 +5,7 @@ use std::ops::Range;
 
 use bevy::{
     asset::{io::Reader, AssetLoader, LoadContext},
-    prelude::Handle,
+    prelude::{AppFunctionRegistry, FromWorld, Handle, World},
     reflect::Reflect,
     utils::HashMap,
 };
@@ -14,8 +14,17 @@ use thiserror::Error;
 
 use super::{AnimationClip2D, AnimationClip2DError, AnimationClip2DSet};
 
-#[derive(Default)]
-pub(crate) struct Animation2DLoader;
+pub(crate) struct Animation2DLoader {
+    function_registry: AppFunctionRegistry,
+}
+
+impl FromWorld for Animation2DLoader {
+    fn from_world(world: &mut World) -> Self {
+        Self {
+            function_registry: world.resource::<AppFunctionRegistry>().clone(),
+        }
+    }
+}
 
 /// Possible errors that can be produced by Animation2DLoader.
 #[non_exhaustive]
@@ -28,7 +37,7 @@ pub enum Animation2DLoaderError {
     #[error("Could not parse RON: {0}")]
     RonSpannedError(#[from] ron::error::SpannedError),
     /// An [`AnimationClip2DError`].
-    #[error("AnimationClip2D has internal erro: {0}")]
+    #[error("AnimationClip2D has internal error: {0}")]
     AnimationClip2DError(#[from] AnimationClip2DError),
 }
 
@@ -58,8 +67,11 @@ pub(crate) struct TrickfilmEntry {
     /// Keyframe timestamps for this animation
     #[serde(default)]
     keyframe_timestamps: Option<Vec<f32>>,
-    /// Duration ofthis animation
+    /// Duration of this animation
     duration: f32,
+    /// User callbacks for this animation
+    #[serde(default)]
+    callbacks: Vec<String>,
 }
 
 /// File extension for spritesheet animation manifest files written in ron.
@@ -94,9 +106,15 @@ impl AssetLoader for Animation2DLoader {
                             })
                             .collect(),
                     );
+                    let callbacks = entry.callbacks;
 
-                    let animation_clip =
-                        AnimationClip2D::new(keyframe_timestamps, keyframes, duration)?;
+                    let animation_clip = AnimationClip2D::new(
+                        keyframe_timestamps,
+                        keyframes,
+                        duration,
+                        callbacks,
+                        &self.function_registry.read(),
+                    )?;
                     Ok((
                         name.clone(),
                         load_context.add_labeled_asset(name, animation_clip),

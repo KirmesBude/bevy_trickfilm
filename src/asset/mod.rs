@@ -8,8 +8,9 @@ use std::cmp::Ordering;
 
 use asset_loader::{TrickfilmEntry, TrickfilmEntryKeyframes};
 use bevy::{
+    asset::ErasedAssetLoader,
     prelude::{App, Asset, AssetApp, Handle, Plugin},
-    reflect::Reflect,
+    reflect::{func::DynamicFunction, Reflect},
     utils::HashMap,
 };
 use thiserror::Error;
@@ -34,7 +35,7 @@ impl Plugin for Animation2DLoaderPlugin {
 }
 
 /// AnimationClip for a 2D animation.
-#[derive(Asset, Reflect, Clone, Debug, Default)]
+#[derive(Asset, Clone, Debug, Default, Reflect)]
 pub struct AnimationClip2D {
     /// Timestamps for each keyframe in seconds.
     keyframe_timestamps: Vec<f32>,
@@ -42,6 +43,9 @@ pub struct AnimationClip2D {
     keyframes: Vec<usize>,
     /// Total duration of this animation clip in seconds.
     duration: f32,
+    /// User defined callbacks
+    #[reflect(ignore)]
+    callbacks: Vec<DynamicFunction<'static>>, // TODO: Can this be a reference instead of DynamicFunction?
 }
 
 /// Possible errors that can be produced by [`AnimationClip2D`]
@@ -57,6 +61,9 @@ pub enum AnimationClip2DError {
     /// Error that occurs, if duration is not sufficient to play all keyframes.
     #[error("Duration of {0} is insufficient to display last keyframe at {1}")]
     InsufficientDuration(f32, f32),
+    /// Error that occurs, if callback function is not registered.
+    #[error("Callback {0} was not found in the FunctionRegistry")]
+    CallbackNotRegistered(String),
 }
 
 impl AnimationClip2D {
@@ -65,6 +72,7 @@ impl AnimationClip2D {
         keyframe_timestamps: Vec<f32>,
         keyframes: Vec<usize>,
         duration: f32,
+        callbacks: Vec<&DynamicFunction<'static>>,
     ) -> Result<Self, AnimationClip2DError> {
         let keyframe_timestamps_len = keyframe_timestamps.len();
         let keyframes_len = keyframes.len();
@@ -85,7 +93,7 @@ impl AnimationClip2D {
                 x.partial_cmp(y)
                     .expect("Keyframe timestamps contain elements, that are not comparable.")
             })
-            .expect("Already covered by AnimationClip2DError::Empty().");
+            .expect("Already covered by AnimationClip2DError::Empty()."); // TODO: We can not depend on that in case someone creates this asset by hand
         if let Some(Ordering::Greater) = keyframe_timestamps_max.partial_cmp(&duration) {
             return Err(AnimationClip2DError::InsufficientDuration(
                 *keyframe_timestamps_max,
@@ -93,10 +101,25 @@ impl AnimationClip2D {
             ));
         }
 
+        let callbacks: Result<Vec<_>, _> = callbacks
+            .into_iter()
+            .map(|callback| {
+                if callback.info().return_info().type_id() == ().type_id() {
+                    // TODO: More verification regardin args
+                    Ok(callback.clone())
+                } else {
+                    Err(AnimationClip2DError::CallbackNotRegistered(
+                        callback.info().name().unwrap().to_string(),
+                    ))
+                }
+            })
+            .collect();
+
         Ok(Self {
             keyframe_timestamps,
             keyframes,
             duration,
+            callbacks: callbacks?,
         })
     }
 
@@ -116,6 +139,12 @@ impl AnimationClip2D {
     #[inline]
     pub fn duration(&self) -> f32 {
         self.duration
+    }
+
+    /// User callbacks of this animation clip.
+    #[inline]
+    pub fn callbacks(&self) -> &[DynamicFunction<'static>] {
+        &self.callbacks
     }
 }
 

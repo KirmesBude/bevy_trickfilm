@@ -4,8 +4,8 @@
 use std::ops::Range;
 
 use bevy::{
-    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
-    prelude::Handle,
+    asset::{io::Reader, AssetLoader, LoadContext},
+    prelude::{AppFunctionRegistry, FromWorld, Handle, World},
     reflect::Reflect,
     utils::HashMap,
 };
@@ -14,8 +14,17 @@ use thiserror::Error;
 
 use super::{AnimationClip2D, AnimationClip2DError, AnimationClip2DSet};
 
-#[derive(Default)]
-pub(crate) struct Animation2DLoader;
+pub(crate) struct Animation2DLoader {
+    function_registry: AppFunctionRegistry,
+}
+
+impl FromWorld for Animation2DLoader {
+    fn from_world(world: &mut World) -> Self {
+        Self {
+            function_registry: world.resource::<AppFunctionRegistry>().clone(),
+        }
+    }
+}
 
 /// Possible errors that can be produced by Animation2DLoader.
 #[non_exhaustive]
@@ -28,8 +37,11 @@ pub enum Animation2DLoaderError {
     #[error("Could not parse RON: {0}")]
     RonSpannedError(#[from] ron::error::SpannedError),
     /// An [`AnimationClip2DError`].
-    #[error("AnimationClip2D has internal erro: {0}")]
+    #[error("AnimationClip2D has internal error: {0}")]
     AnimationClip2DError(#[from] AnimationClip2DError),
+    /// Error that occurs, if callback function is not registered.
+    #[error("Callback {0} was not found in the FunctionRegistry")]
+    CallbackNotRegistered(String),
 }
 
 /// Declaration of the deserialized variant for the animation frame indices.
@@ -58,8 +70,11 @@ pub(crate) struct TrickfilmEntry {
     /// Keyframe timestamps for this animation
     #[serde(default)]
     keyframe_timestamps: Option<Vec<f32>>,
-    /// Duration ofthis animation
+    /// Duration of this animation
     duration: f32,
+    /// User callbacks for this animation
+    #[serde(default)]
+    callbacks: Vec<String>,
 }
 
 /// File extension for spritesheet animation manifest files written in ron.
@@ -72,7 +87,7 @@ impl AssetLoader for Animation2DLoader {
 
     async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader<'_>,
+        reader: &'a mut dyn Reader,
         _settings: &'a (),
         load_context: &'a mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
@@ -94,9 +109,19 @@ impl AssetLoader for Animation2DLoader {
                             })
                             .collect(),
                     );
+                    let function_registry = self.function_registry.read();
+                    let callbacks: Result<Vec<_>, _> = entry
+                        .callbacks
+                        .into_iter()
+                        .map(|name| match function_registry.get(&name) {
+                            Some(callback) => Ok(callback),
+                            None => Err(Animation2DLoaderError::CallbackNotRegistered(name)),
+                        })
+                        .collect();
+                    let callbacks = callbacks.unwrap(); // TODO: Proper error handling
 
                     let animation_clip =
-                        AnimationClip2D::new(keyframe_timestamps, keyframes, duration)?;
+                        AnimationClip2D::new(keyframe_timestamps, keyframes, duration, callbacks)?;
                     Ok((
                         name.clone(),
                         load_context.add_labeled_asset(name, animation_clip),

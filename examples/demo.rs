@@ -33,7 +33,7 @@ fn setup(
     commands.spawn((
         FrameText,
         TextBundle::from_section(
-            "CURRENT FRAME",
+            "current frame: 0",
             TextStyle {
                 font_size: 24.0,
                 color: Color::WHITE,
@@ -105,5 +105,5 @@ fn update_frame_text(
         return;
     };
 
-    text.sections[0].value = format!(" current frame: {}", animation_player.frame());
+    text.sections[0].value = format!("current frame: {}", animation_player.frame());
 }

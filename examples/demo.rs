@@ -15,18 +15,33 @@ fn main() {
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(Animation2DPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, keyboard_animation_control)
+        .add_systems(Update, (keyboard_animation_control, update_frame_text))
         .run();
 }
 
 #[derive(Resource)]
 struct Animations(Vec<Handle<AnimationClip2D>>);
 
+#[derive(Component)]
+struct FrameText;
+
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
+    commands.spawn((
+        FrameText,
+        TextBundle::from_section(
+            "current frame: 0",
+            TextStyle {
+                font_size: 24.0,
+                color: Color::WHITE,
+                ..default()
+            },
+        ),
+    ));
+
     // Load all animations
     let animations = vec![
         asset_server.load("gabe-idle-run-animation.trickfilm.ron#run"),
@@ -77,4 +92,18 @@ fn keyboard_animation_control(
             &mut instructions_printed,
         );
     }
+}
+
+fn update_frame_text(
+    mut q_frame_text: Query<&mut Text, With<FrameText>>,
+    q_animation_player: Query<&AnimationPlayer2D>,
+) {
+    let Ok(mut text) = q_frame_text.get_single_mut() else {
+        return;
+    };
+    let Ok(animation_player) = q_animation_player.get_single() else {
+        return;
+    };
+
+    text.sections[0].value = format!("current frame: {}", animation_player.frame());
 }

@@ -69,6 +69,7 @@ fn apply_animation_player_spritesheet(
             Err(i) => i - 1,
         };
 
+        animation.frame = index;
         let keyframes = animation_clip.keyframes();
         *texture_atlas_index = keyframes[index]
     }

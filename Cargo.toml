@@ -39,3 +39,7 @@ path = "examples/bevy_asset_loader.rs"
 [[example]]
 name = "pausing_animations"
 path = "examples/pausing_animations.rs"
+
+[[example]]
+name = "events"
+path = "examples/events.rs"

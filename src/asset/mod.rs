@@ -9,7 +9,7 @@ use std::cmp::Ordering;
 use asset_loader::{TrickfilmEntry, TrickfilmEntryKeyframes};
 use bevy::{
     prelude::{App, Asset, AssetApp, Handle, Plugin},
-    reflect::Reflect,
+    reflect::{Reflect, TypePath},
     utils::HashMap,
 };
 use thiserror::Error;
@@ -23,8 +23,11 @@ pub struct Animation2DLoaderPlugin;
 
 impl Plugin for Animation2DLoaderPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<AnimationClip2D>()
+        app
+            /*
+            .register_type::<AnimationClip2D>()
             .register_type::<AnimationClip2DSet>()
+            */
             .register_type::<TrickfilmEntryKeyframes>()
             .register_type::<TrickfilmEntry>();
         app.init_asset::<AnimationClip2D>()
@@ -34,7 +37,7 @@ impl Plugin for Animation2DLoaderPlugin {
 }
 
 /// AnimationClip for a 2D animation.
-#[derive(Asset, Reflect, Clone, Debug, Default)]
+#[derive(Asset, TypePath, Debug)]
 pub struct AnimationClip2D {
     /// Timestamps for each keyframe in seconds.
     keyframe_timestamps: Vec<f32>,
@@ -42,6 +45,7 @@ pub struct AnimationClip2D {
     keyframes: Vec<usize>,
     /// Total duration of this animation clip in seconds.
     duration: f32,
+    pub events: HashMap<usize, Vec<Box<dyn Reflect>>>,
 }
 
 /// Possible errors that can be produced by [`AnimationClip2D`]
@@ -97,6 +101,7 @@ impl AnimationClip2D {
             keyframe_timestamps,
             keyframes,
             duration,
+            events: HashMap::new(),
         })
     }
 
@@ -120,7 +125,7 @@ impl AnimationClip2D {
 }
 
 /// Set(Map) of AnimationClips for a 2D animation.
-#[derive(Asset, Reflect, Clone, Debug, Default)]
+#[derive(Asset, TypePath, Debug)]
 pub struct AnimationClip2DSet {
     /// Named animations loaded from the trickfilm file.
     pub animations: HashMap<String, Handle<AnimationClip2D>>,

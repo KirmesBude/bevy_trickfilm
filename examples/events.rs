@@ -14,9 +14,20 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(Animation2DPlugin)
+        .add_event::<SampleEvent>()
+        .add_animation_event::<SampleEvent>()
+        .register_type::<SampleEvent>()
         .add_systems(Startup, setup)
-        .add_systems(Update, (keyboard_animation_control, update_frame_text))
+        .add_systems(
+            Update,
+            (keyboard_animation_control, update_frame_text, print_event),
+        )
         .run();
+}
+
+#[derive(Debug, Clone, Event, Reflect)]
+struct SampleEvent {
+    msg: String,
 }
 
 #[derive(Resource)]
@@ -44,8 +55,8 @@ fn setup(
 
     // Load all animations
     let animations = vec![
-        asset_server.load("gabe-idle-run-animation.trickfilm.ron#run"),
-        asset_server.load("gabe-idle-run-animation.trickfilm.ron#idle"),
+        asset_server.load("gabe-idle-run-animation-events.trickfilm.ron#run"),
+        asset_server.load("gabe-idle-run-animation-events.trickfilm.ron#idle"),
     ];
 
     let atlas_texture = asset_server.load("gabe-idle-run.png");
@@ -106,4 +117,10 @@ fn update_frame_text(
     };
 
     text.sections[0].value = format!("current frame: {}", animation_player.frame());
+}
+
+fn print_event(mut event_reader: EventReader<SampleEvent>) {
+    for event in event_reader.read() {
+        println!("{}", event.msg);
+    }
 }

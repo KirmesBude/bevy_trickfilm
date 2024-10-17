@@ -18,7 +18,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .init_state::<PauseState>()
         .configure_sets(
-            Update,
+            PostUpdate,
             AnimationPlayer2DSystemSet.run_if(in_state(PauseState::Running)),
         )
         .add_plugins(Animation2DPlugin)

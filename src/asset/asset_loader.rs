@@ -95,8 +95,12 @@ impl AssetLoader for Animation2DLoader {
                             .collect(),
                     );
 
-                    let animation_clip =
-                        AnimationClip2D::new(keyframe_timestamps, keyframes, duration)?;
+                    let animation_clip = AnimationClip2D::new(
+                        keyframe_timestamps,
+                        keyframes,
+                        duration,
+                        HashMap::new(),
+                    )?;
                     Ok((
                         name.clone(),
                         load_context.add_labeled_asset(name, animation_clip),

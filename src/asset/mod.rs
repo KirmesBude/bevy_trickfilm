@@ -69,6 +69,7 @@ impl AnimationClip2D {
         keyframe_timestamps: Vec<f32>,
         keyframes: Vec<usize>,
         duration: f32,
+        events: HashMap<usize, Vec<Box<dyn Reflect>>>,
     ) -> Result<Self, AnimationClip2DError> {
         let keyframe_timestamps_len = keyframe_timestamps.len();
         let keyframes_len = keyframes.len();
@@ -101,7 +102,7 @@ impl AnimationClip2D {
             keyframe_timestamps,
             keyframes,
             duration,
-            events: HashMap::new(),
+            events,
         })
     }
 

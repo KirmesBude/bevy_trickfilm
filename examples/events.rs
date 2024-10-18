@@ -7,7 +7,7 @@
 mod animation_helper;
 
 use animation_helper::keyboard_animation_control_helper;
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashMap};
 use bevy_trickfilm::prelude::*;
 
 fn main() {
@@ -38,6 +38,7 @@ struct FrameText;
 
 fn setup(
     mut commands: Commands,
+    mut clips: ResMut<Assets<AnimationClip2D>>,
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
@@ -53,10 +54,34 @@ fn setup(
         ),
     ));
 
+    let start = SampleEvent {
+        msg: String::from("start"),
+    };
+    let middle = SampleEvent {
+        msg: String::from("middle"),
+    };
+    let end = SampleEvent {
+        msg: String::from("end"),
+    };
+
+    // animation events
+    let mut events = HashMap::new();
+    events.insert(1, vec![start.as_reflect().clone_value()]);
+    events.insert(3, vec![middle.as_reflect().clone_value()]);
+    events.insert(6, vec![end.as_reflect().clone_value()]);
+
     // Load all animations
     let animations = vec![
-        asset_server.load("gabe-idle-run-animation-events.trickfilm.ron#run"),
-        asset_server.load("gabe-idle-run-animation-events.trickfilm.ron#idle"),
+        clips.add(
+            AnimationClip2D::new(
+                vec![0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
+                vec![1, 2, 3, 4, 5, 6],
+                0.6,
+                events,
+            )
+            .unwrap(),
+        ),
+        clips.add(AnimationClip2D::new(vec![0.0], vec![0], 0.1, HashMap::new()).unwrap()),
     ];
 
     let atlas_texture = asset_server.load("gabe-idle-run.png");

@@ -87,13 +87,21 @@ fn setup(
         clips.add(
             AnimationClip2D::new(
                 vec![0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
-                vec![1, 2, 3, 4, 5, 6],
+                bevy_trickfilm::asset::Keyframes::KeyframesVec(vec![1, 2, 3, 4, 5, 6]),
                 0.6,
                 events,
             )
             .unwrap(),
         ),
-        clips.add(AnimationClip2D::new(vec![0.0], vec![0], 0.1, HashMap::new()).unwrap()),
+        clips.add(
+            AnimationClip2D::new(
+                vec![0.0],
+                bevy_trickfilm::asset::Keyframes::KeyframesVec(vec![0]),
+                0.1,
+                HashMap::new(),
+            )
+            .unwrap(),
+        ),
     ];
 
     let atlas_texture = asset_server.load("gabe-idle-run.png");

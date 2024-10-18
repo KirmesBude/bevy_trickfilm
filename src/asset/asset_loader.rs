@@ -12,7 +12,7 @@ use bevy::{
 use serde::Deserialize;
 use thiserror::Error;
 
-use super::{AnimationClip2D, AnimationClip2DError, AnimationClip2DSet};
+use super::{AnimationClip2D, AnimationClip2DError, AnimationClip2DSet, Keyframes};
 
 #[derive(Default)]
 pub(crate) struct Animation2DLoader;
@@ -97,7 +97,7 @@ impl AssetLoader for Animation2DLoader {
 
                     let animation_clip = AnimationClip2D::new(
                         keyframe_timestamps,
-                        keyframes,
+                        Keyframes::KeyframesVec(keyframes),
                         duration,
                         HashMap::new(),
                     )?;

@@ -5,7 +5,9 @@
 //!
 
 use std::cmp::Ordering;
+use std::ops::Range;
 
+use ::serde::Deserialize;
 use asset_loader::{TrickfilmEntry, TrickfilmEntryKeyframes};
 use bevy::{
     prelude::{App, Asset, AssetApp, Handle, Plugin},
@@ -17,6 +19,7 @@ use thiserror::Error;
 use self::asset_loader::Animation2DLoader;
 
 pub mod asset_loader;
+mod serde;
 
 /// Adds support for spritesheet animation manifest files loading to the app.
 pub struct Animation2DLoaderPlugin;
@@ -36,13 +39,44 @@ impl Plugin for Animation2DLoaderPlugin {
     }
 }
 
+#[derive(Debug, Deserialize)]
+pub enum Keyframes {
+    KeyframesVec(Vec<usize>),
+    KeyframesRange(Range<usize>),
+}
+
+impl From<Keyframes> for Vec<usize> {
+    fn from(keyframes: Keyframes) -> Self {
+        match keyframes {
+            Keyframes::KeyframesVec(vec) => vec,
+            Keyframes::KeyframesRange(range) => range.collect(),
+        }
+    }
+}
+
+impl Keyframes {
+    pub fn len(&self) -> usize {
+        match self {
+            Keyframes::KeyframesVec(vec) => vec.len(),
+            Keyframes::KeyframesRange(range) => range.len(),
+        }
+    }
+
+    pub fn get(&self, index: usize) -> Option<usize> {
+        match self {
+            Keyframes::KeyframesVec(vec) => Some(vec[index]),
+            Keyframes::KeyframesRange(range) => Some(range.start + index),
+        }
+    }
+}
+
 /// AnimationClip for a 2D animation.
 #[derive(Asset, TypePath, Debug)]
 pub struct AnimationClip2D {
     /// Timestamps for each keyframe in seconds.
     keyframe_timestamps: Vec<f32>,
     /// An ordered list of incides of the TextureAtlas or Images that represent the frames of this animation.
-    keyframes: Vec<usize>,
+    keyframes: Keyframes,
     /// Total duration of this animation clip in seconds.
     duration: f32,
     events: HashMap<usize, Vec<Box<dyn Reflect>>>,
@@ -70,7 +104,7 @@ impl AnimationClip2D {
     /// Creates a valid [`AnimationClip2D`]
     pub fn new(
         keyframe_timestamps: Vec<f32>,
-        keyframes: Vec<usize>,
+        keyframes: Keyframes,
         duration: f32,
         events: HashMap<usize, Vec<Box<dyn Reflect>>>,
     ) -> Result<Self, AnimationClip2DError> {
@@ -125,7 +159,7 @@ impl AnimationClip2D {
 
     /// Ordered list of keyframes for this animation.
     #[inline]
-    pub fn keyframes(&self) -> &[usize] {
+    pub fn keyframes(&self) -> &Keyframes {
         &self.keyframes
     }
 

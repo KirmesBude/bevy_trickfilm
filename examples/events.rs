@@ -25,14 +25,10 @@ fn main() {
         .run();
 }
 
-fn lol() -> Entity {
-    Entity::PLACEHOLDER
-}
-
 #[derive(Debug, Clone, Event, Reflect)]
 struct SampleEvent {
-    #[reflect(ignore)]
-    #[reflect(default = "lol")]
+    #[reflect(skip_serializing)]
+    #[reflect(default = "default_entity")]
     entity: Entity,
     msg: String,
 }
@@ -68,15 +64,15 @@ fn setup(
     ));
 
     let start = SampleEvent {
-        entity: lol(),
+        entity: default_entity(),
         msg: String::from("start"),
     };
     let middle = SampleEvent {
-        entity: lol(),
+        entity: default_entity(),
         msg: String::from("middle"),
     };
     let end = SampleEvent {
-        entity: lol(),
+        entity: default_entity(),
         msg: String::from("end"),
     };
 

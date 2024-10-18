@@ -17,6 +17,10 @@ pub trait AnimationEvent: Event + FromReflect {
     }
 }
 
+pub fn default_entity() -> Entity {
+    Entity::PLACEHOLDER
+}
+
 // Define generic trigger and event systems
 pub fn send_animation_event<T: AnimationEvent>(
     mut event_writer: EventWriter<T>,

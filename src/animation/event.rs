@@ -7,8 +7,12 @@ use super::{
     AnimationPlayer2DSystemSet,
 };
 
+/// AnimationEvents are triggered by the animation system if registered as such with the App.
 pub trait AnimationEvent: Event + FromReflect {
+    /// Implement this to be able to set the entity for a targeted event.
+    /// Default implementation is a No-Op.
     fn set_entity(&mut self, entity: Entity) {
+        let _ = entity;
         /* Default implementation is empty for non-targeted events */
     }
 }
@@ -21,7 +25,7 @@ pub fn send_animation_event<T: AnimationEvent>(
 ) {
     for (entity, animation_player) in &animation_players {
         if let Some(animation_clip) = animation_clips.get(animation_player.animation_clip()) {
-            if let Some(reflected_events) = animation_clip.events.get(&animation_player.frame()) {
+            if let Some(reflected_events) = animation_clip.events().get(&animation_player.frame()) {
                 for reflected_event in reflected_events {
                     // TODO: Patch in entity somehow
                     if let Some(mut event) = T::from_reflect(reflected_event.as_reflect()) {
@@ -43,7 +47,7 @@ pub fn trigger_animation_event<T: AnimationEvent>(
 ) {
     for (entity, animation_player) in &animation_players {
         if let Some(animation_clip) = animation_clips.get(animation_player.animation_clip()) {
-            if let Some(reflected_events) = animation_clip.events.get(&animation_player.frame()) {
+            if let Some(reflected_events) = animation_clip.events().get(&animation_player.frame()) {
                 for reflected_event in reflected_events {
                     // TODO: Patch in entity somehow
                     if let Some(mut event) = T::from_reflect(reflected_event.as_reflect()) {
@@ -57,11 +61,12 @@ pub fn trigger_animation_event<T: AnimationEvent>(
     }
 }
 
-// Add extension to app to add animation_events/animation_triggers, which will schedule these systems for the specific type
-
+/// App extension trait to add animation_events/animation_triggers, which will schedule these sending/triggering systems for the specific type
 pub trait AnimationEventAppExtension {
+    /// Add event as buffered event.
     fn add_animation_event<T: AnimationEvent>(&mut self) -> &mut Self;
 
+    /// Add event as observer.
     fn add_animation_trigger<T: AnimationEvent>(&mut self) -> &mut Self;
 }
 

@@ -82,9 +82,9 @@ fn setup(
 
     // animation events
     let mut events = HashMap::new();
-    events.insert(1, vec![start.as_reflect().clone_value()]);
+    events.insert(0, vec![start.as_reflect().clone_value()]);
     events.insert(3, vec![middle.as_reflect().clone_value()]);
-    events.insert(6, vec![end.as_reflect().clone_value()]);
+    events.insert(5, vec![end.as_reflect().clone_value()]);
 
     // Load all animations
     let animations = vec![

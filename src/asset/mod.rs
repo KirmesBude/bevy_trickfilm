@@ -45,7 +45,7 @@ pub struct AnimationClip2D {
     keyframes: Vec<usize>,
     /// Total duration of this animation clip in seconds.
     duration: f32,
-    pub events: HashMap<usize, Vec<Box<dyn Reflect>>>,
+    events: HashMap<usize, Vec<Box<dyn Reflect>>>,
 }
 
 /// Possible errors that can be produced by [`AnimationClip2D`]
@@ -61,6 +61,9 @@ pub enum AnimationClip2DError {
     /// Error that occurs, if duration is not sufficient to play all keyframes.
     #[error("Duration of {0} is insufficient to display last keyframe at {1}")]
     InsufficientDuration(f32, f32),
+    /// Error that occurs, if an events references a frame outside the frame range.
+    #[error("Frame {0} for this animation clip, because it only has {1} frames")]
+    InvalidFrame(usize, usize),
 }
 
 impl AnimationClip2D {
@@ -98,6 +101,14 @@ impl AnimationClip2D {
             ));
         }
 
+        let max_event_frame = events.keys().max().cloned().unwrap_or(0);
+        if max_event_frame > keyframes_len {
+            return Err(AnimationClip2DError::InvalidFrame(
+                max_event_frame,
+                keyframes_len,
+            ));
+        }
+
         Ok(Self {
             keyframe_timestamps,
             keyframes,
@@ -122,6 +133,12 @@ impl AnimationClip2D {
     #[inline]
     pub fn duration(&self) -> f32 {
         self.duration
+    }
+
+    /// All reflected events for this animation clip identified by their associated frame.
+    #[inline]
+    pub fn events(&self) -> &HashMap<usize, Vec<Box<dyn Reflect>>> {
+        &self.events
     }
 }
 

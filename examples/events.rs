@@ -25,9 +25,22 @@ fn main() {
         .run();
 }
 
+fn lol() -> Entity {
+    Entity::PLACEHOLDER
+}
+
 #[derive(Debug, Clone, Event, Reflect)]
 struct SampleEvent {
+    #[reflect(ignore)]
+    #[reflect(default = "lol")]
+    entity: Entity,
     msg: String,
+}
+
+impl AnimationEvent for SampleEvent {
+    fn set_entity(&mut self, entity: Entity) {
+        self.entity = entity;
+    }
 }
 
 #[derive(Resource)]
@@ -55,12 +68,15 @@ fn setup(
     ));
 
     let start = SampleEvent {
+        entity: lol(),
         msg: String::from("start"),
     };
     let middle = SampleEvent {
+        entity: lol(),
         msg: String::from("middle"),
     };
     let end = SampleEvent {
+        entity: lol(),
         msg: String::from("end"),
     };
 
@@ -146,6 +162,6 @@ fn update_frame_text(
 
 fn print_event(mut event_reader: EventReader<SampleEvent>) {
     for event in event_reader.read() {
-        println!("{}", event.msg);
+        println!("{:?}", event);
     }
 }

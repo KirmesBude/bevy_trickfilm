@@ -14,7 +14,7 @@ use bevy::{
 
 use self::animation_spritesheet::animation_player_spritesheet;
 
-pub use event::AnimationEventAppExtension;
+pub use event::{AnimationEvent, AnimationEventAppExtension};
 
 /// A [`SystemSet`] to control where the animations are run
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

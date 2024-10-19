@@ -8,21 +8,21 @@
         keyframes: KeyframesRange((start: 1, end: 7)),
         duration: 0.6, /* Must be greater than max(keyframe_timestamps), if provided */
         events: {
-            0: [
+            0: {
                 "events::SampleEvent": (
                     msg: "start",
                 )
-            ],
-            3: [
+            },
+            3: {
                 "events::SampleEvent": (
                     msg: "middle",
                 )
-            ],
-            5: [
+            },
+            5: {
                 "events::SampleEvent": (
                     msg: "end",
                 )
-            ],
+            },
         }
     ),
 }

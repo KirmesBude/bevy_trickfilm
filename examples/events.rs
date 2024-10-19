@@ -104,6 +104,11 @@ fn setup(
         ),
     ];
 
+    let animations = vec![
+        asset_server.load("gabe-idle-run-animation-events.trickfilm.ron#run"),
+        asset_server.load("gabe-idle-run-animation-events.trickfilm.ron#idle"),
+    ];
+
     let atlas_texture = asset_server.load("gabe-idle-run.png");
     let texture_atlas_layout = TextureAtlasLayout::from_grid(UVec2::new(24, 24), 7, 1, None, None);
     let texture_atlas = TextureAtlas {

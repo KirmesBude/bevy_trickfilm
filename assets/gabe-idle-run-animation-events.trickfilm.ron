@@ -1,25 +1,24 @@
 {
     "idle": (
         keyframes: KeyframesVec([0]),
-        /* optional */ keyframe_timestamps: Some([0.0]), /* Must be same size as keyframes, if provided */
+        /* optional */ keyframe_timestamps: [0.0], /* Must be same size as keyframes, if provided */
         duration: 0.1, /* Must be greater than max(keyframe_timestamps), if provided */
     ),
     "run": (
         keyframes: KeyframesRange((start: 1, end: 7)),
-        keyframe_timestamps: None,
         duration: 0.6, /* Must be greater than max(keyframe_timestamps), if provided */
         events: {
-            1: [
+            0: [
                 "events::SampleEvent": (
                     msg: "start",
                 )
             ],
-            4: [
+            3: [
                 "events::SampleEvent": (
                     msg: "middle",
                 )
             ],
-            7: [
+            5: [
                 "events::SampleEvent": (
                     msg: "end",
                 )

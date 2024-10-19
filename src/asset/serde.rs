@@ -1,4 +1,11 @@
-use bevy::{asset::LoadContext, reflect::TypeRegistry, utils::HashMap};
+use bevy::{
+    asset::LoadContext,
+    reflect::{
+        serde::{ReflectDeserializer, TypeRegistrationDeserializer, TypedReflectDeserializer},
+        Reflect, TypeRegistry,
+    },
+    utils::{HashMap, HashSet},
+};
 use serde::{
     de::{DeserializeSeed, Error, Visitor},
     Deserialize, Deserializer,
@@ -58,7 +65,20 @@ impl<'a, 'l, 'de> Visitor<'de> for AnimationClip2DSetMapVisitor<'a, 'l> {
     }
 }
 
-pub struct AnimationClip2DDeserializer<'a> {
+#[derive(Deserialize)]
+#[serde(field_identifier)]
+enum AnimationClip2DField {
+    #[serde(rename = "keyframes")]
+    Keyframes,
+    #[serde(rename = "keyframe_timestamps")]
+    KeyframeTimestamps,
+    #[serde(rename = "duration")]
+    Duration,
+    #[serde(rename = "events")]
+    Events,
+}
+
+struct AnimationClip2DDeserializer<'a> {
     pub type_registry: &'a TypeRegistry,
 }
 
@@ -128,7 +148,9 @@ impl<'a, 'de> Visitor<'de> for AnimationClip2DVisitor<'a> {
                     if events.is_some() {
                         return Err(Error::duplicate_field("events"));
                     }
-                    /* TODO */
+                    events = Some(map.next_value_seed(AnimationEventsMapDeserializer {
+                        type_registry: self.type_registry,
+                    })?);
                 }
             }
         }
@@ -141,15 +163,115 @@ impl<'a, 'de> Visitor<'de> for AnimationClip2DVisitor<'a> {
     }
 }
 
-#[derive(Deserialize)]
-#[serde(field_identifier)]
-enum AnimationClip2DField {
-    #[serde(rename = "keyframes")]
-    Keyframes,
-    #[serde(rename = "keyframe_timestamps")]
-    KeyframeTimestamps,
-    #[serde(rename = "duration")]
-    Duration,
-    #[serde(rename = "events")]
-    Events,
+struct AnimationEventsMapDeserializer<'a> {
+    pub type_registry: &'a TypeRegistry,
+}
+
+impl<'a, 'de> DeserializeSeed<'de> for AnimationEventsMapDeserializer<'a> {
+    type Value = HashMap<usize, Vec<Box<dyn Reflect>>>;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_map(AnimationEventsMapVisitor {
+            type_registry: self.type_registry,
+        })
+    }
+}
+
+struct AnimationEventsMapVisitor<'a> {
+    pub type_registry: &'a TypeRegistry,
+}
+
+impl<'a, 'de> Visitor<'de> for AnimationEventsMapVisitor<'a> {
+    type Value = HashMap<usize, Vec<Box<dyn Reflect>>>;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("map of events")
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where
+        A: serde::de::MapAccess<'de>,
+    {
+        let mut value = HashMap::new();
+
+        while let Some(frame) = map.next_key::<usize>()? {
+            let events = map.next_value_seed(AnimationEventsDeserializer {
+                type_registry: self.type_registry,
+            })?;
+            value.insert(frame, events);
+        }
+
+        Ok(value)
+    }
+}
+
+struct AnimationEventsDeserializer<'a> {
+    pub type_registry: &'a TypeRegistry,
+}
+
+impl<'a, 'de> DeserializeSeed<'de> for AnimationEventsDeserializer<'a> {
+    type Value = Vec<Box<dyn Reflect>>;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_map(AnimationEventsVisitor {
+            type_registry: self.type_registry,
+        })
+    }
+}
+
+struct AnimationEventsVisitor<'a> {
+    pub type_registry: &'a TypeRegistry,
+}
+
+impl<'a, 'de> Visitor<'de> for AnimationEventsVisitor<'a> {
+    type Value = Vec<Box<dyn Reflect>>;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("map of reflect types")
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: serde::de::SeqAccess<'de>,
+    {
+        let mut dynamic_properties = Vec::new();
+        while let Some(entity) =
+            seq.next_element_seed(ReflectDeserializer::new(self.type_registry))?
+        {
+            dynamic_properties.push(entity);
+        }
+
+        Ok(dynamic_properties)
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where
+        A: serde::de::MapAccess<'de>,
+    {
+        let mut added = HashSet::new();
+        let mut entries = Vec::new();
+        while let Some(registration) =
+            map.next_key_seed(TypeRegistrationDeserializer::new(self.type_registry))?
+        {
+            if !added.insert(registration.type_id()) {
+                return Err(Error::custom(format_args!(
+                    "duplicate reflect type: `{}`",
+                    registration.type_info().type_path(),
+                )));
+            }
+
+            entries.push(map.next_value_seed(TypedReflectDeserializer::new(
+                registration,
+                self.type_registry,
+            ))?);
+        }
+
+        Ok(entries)
+    }
 }

@@ -1,21 +1,32 @@
 //! This module contains the internals of the Animation2DLoader.
 //!
 
-use std::ops::Range;
+use std::ops::{DerefMut, Range};
 
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
-    prelude::Handle,
-    reflect::Reflect,
-    utils::HashMap,
+    prelude::{AppTypeRegistry, FromWorld, World},
+    reflect::{Reflect, TypeRegistryArc},
 };
-use serde::Deserialize;
+use ron::Deserializer;
+use serde::{de::DeserializeSeed, Deserialize};
 use thiserror::Error;
 
-use super::{AnimationClip2D, AnimationClip2DError, AnimationClip2DSet, Keyframes};
+use super::{serde::AnimationClip2DSetDeserializer, AnimationClip2DError, AnimationClip2DSet};
 
-#[derive(Default)]
-pub(crate) struct Animation2DLoader;
+#[derive(Debug)]
+pub(crate) struct Animation2DLoader {
+    type_registry: TypeRegistryArc,
+}
+
+impl FromWorld for Animation2DLoader {
+    fn from_world(world: &mut World) -> Self {
+        let type_registry = world.resource::<AppTypeRegistry>();
+        Self {
+            type_registry: type_registry.0.clone(),
+        }
+    }
+}
 
 /// Possible errors that can be produced by Animation2DLoader.
 #[non_exhaustive]
@@ -70,14 +81,26 @@ impl AssetLoader for Animation2DLoader {
     type Settings = ();
     type Error = Animation2DLoaderError;
 
-    async fn load<'a>(
+    async fn load<'a, 'r, 'l>(
         &'a self,
-        reader: &'a mut Reader<'_>,
+        reader: &'a mut Reader<'r>,
         _settings: &'a (),
-        load_context: &'a mut LoadContext<'_>,
+        load_context: &'a mut LoadContext<'l>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
+
+        let mut deserializer = Deserializer::from_bytes(&bytes)?;
+        let animationclip2dset_deserializer = AnimationClip2DSetDeserializer {
+            type_registry: &self.type_registry.read(),
+            load_context,
+        };
+
+        Ok(animationclip2dset_deserializer
+            .deserialize(&mut deserializer)
+            .map_err(|e| deserializer.span_error(e))?)
+
+        /*
         let trickfilm_entries = ron::de::from_bytes::<HashMap<String, TrickfilmEntry>>(&bytes)?;
 
         let animations: Result<HashMap<String, Handle<AnimationClip2D>>, AnimationClip2DError> =
@@ -112,6 +135,7 @@ impl AssetLoader for Animation2DLoader {
             animations: animations?,
         };
         Ok(animation_clip_2d_set)
+        */
     }
 
     fn extensions(&self) -> &[&str] {

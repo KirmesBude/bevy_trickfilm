@@ -62,6 +62,13 @@ impl Keyframes {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        match self {
+            Keyframes::KeyframesVec(vec) => vec.is_empty(),
+            Keyframes::KeyframesRange(range) => range.is_empty(),
+        }
+    }
+
     pub fn get(&self, index: usize) -> Option<usize> {
         match self {
             Keyframes::KeyframesVec(vec) => Some(vec[index]),

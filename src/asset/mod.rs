@@ -110,13 +110,23 @@ pub enum AnimationClip2DError {
 impl AnimationClip2D {
     /// Creates a valid [`AnimationClip2D`]
     pub fn new(
-        keyframe_timestamps: Vec<f32>,
+        keyframe_timestamps: Option<Vec<f32>>,
         keyframes: Keyframes,
         duration: f32,
-        events: HashMap<usize, Vec<Box<dyn Reflect>>>,
+        events: Option<HashMap<usize, Vec<Box<dyn Reflect>>>>,
     ) -> Result<Self, AnimationClip2DError> {
-        let keyframe_timestamps_len = keyframe_timestamps.len();
         let keyframes_len = keyframes.len();
+
+        let keyframe_timestamps = keyframe_timestamps.unwrap_or(
+            (0..keyframes_len)
+                .map(|i| {
+                    let i = i as f32 / keyframes_len as f32;
+                    i * duration
+                })
+                .collect(),
+        );
+
+        let keyframe_timestamps_len = keyframe_timestamps.len();
         if keyframe_timestamps_len != keyframes_len {
             return Err(AnimationClip2DError::SizeMismatch(
                 keyframe_timestamps_len,
@@ -142,6 +152,7 @@ impl AnimationClip2D {
             ));
         }
 
+        let events = events.unwrap_or_default();
         let max_event_frame = events.keys().max().cloned().unwrap_or(0);
         if max_event_frame > keyframes_len {
             return Err(AnimationClip2DError::InvalidFrame(

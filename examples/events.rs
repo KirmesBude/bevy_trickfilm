@@ -86,19 +86,19 @@ fn setup(
     let animations = vec![
         clips.add(
             AnimationClip2D::new(
-                vec![0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
+                Some(vec![0.0, 0.1, 0.2, 0.3, 0.4, 0.5]),
                 bevy_trickfilm::asset::Keyframes::KeyframesVec(vec![1, 2, 3, 4, 5, 6]),
                 0.6,
-                events,
+                Some(events),
             )
             .unwrap(),
         ),
         clips.add(
             AnimationClip2D::new(
-                vec![0.0],
+                Some(vec![0.0]),
                 bevy_trickfilm::asset::Keyframes::KeyframesVec(vec![0]),
                 0.1,
-                HashMap::new(),
+                None,
             )
             .unwrap(),
         ),

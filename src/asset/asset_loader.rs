@@ -1,7 +1,7 @@
 //! This module contains the internals of the Animation2DLoader.
 //!
 
-use std::ops::{DerefMut, Range};
+use std::ops::Range;
 
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},

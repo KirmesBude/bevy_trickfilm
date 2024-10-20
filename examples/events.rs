@@ -9,6 +9,7 @@ mod animation_helper;
 use animation_helper::keyboard_animation_control_helper;
 use bevy::prelude::*;
 use bevy_trickfilm::prelude::*;
+use bevy_trickfilm_derive::AnimationEvent;
 
 fn main() {
     App::new()
@@ -25,18 +26,12 @@ fn main() {
         .run();
 }
 
-#[derive(Debug, Clone, Event, Reflect)]
+#[derive(Debug, Clone, Event, Reflect, AnimationEvent)]
 struct SampleEvent {
     #[reflect(skip_serializing)]
     #[reflect(default = "default_entity")]
     entity: Entity,
     msg: String,
-}
-
-impl AnimationEvent for SampleEvent {
-    fn set_entity(&mut self, entity: Entity) {
-        self.entity = entity;
-    }
 }
 
 #[derive(Resource)]

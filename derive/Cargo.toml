@@ -1,0 +1,19 @@
+[package]
+authors = ["KirmesBude <kirmesbude@gmail.com>"]
+name = "bevy_trickfilm_derive"
+version = "0.9.0-dev"
+edition = "2021"
+description = "Derive implementations for bevy_trickfilm"
+repository = "https://github.com/KirmesBude/bevy_trickfilm"
+license = "MIT OR Apache-2.0"
+keywords = ["gamedev", "bevy", "animation", "spritesheet", "assets"]
+categories = ["game-development"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+bevy_macro_utils = "0.14.2"
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "2.0", features = ["full"] }

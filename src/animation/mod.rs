@@ -2,7 +2,7 @@
 //!
 
 mod animation_spritesheet;
-mod event;
+pub mod event;
 
 use crate::prelude::AnimationClip2D;
 use bevy::{

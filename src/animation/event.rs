@@ -1,3 +1,6 @@
+//! This module animition event.
+//!
+
 use bevy::{prelude::*, reflect::GetTypeRegistration, utils::HashMap};
 
 use crate::asset::AnimationClip2D;

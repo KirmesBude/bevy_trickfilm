@@ -31,9 +31,12 @@ impl Plugin for Animation2DLoaderPlugin {
     }
 }
 
+/// Keyframes, either as an ordered list or range of texture atlas indices.
 #[derive(Debug, Deserialize)]
 pub enum Keyframes {
+    /// Ordered list of texture atlas indices.
     KeyframesVec(Vec<usize>),
+    /// Range of texture atlas indices.
     KeyframesRange(Range<usize>),
 }
 
@@ -47,6 +50,8 @@ impl From<Keyframes> for Vec<usize> {
 }
 
 impl Keyframes {
+    /// Returns the number of keyframes, also referred to
+    /// as its 'length'.
     pub fn len(&self) -> usize {
         match self {
             Keyframes::KeyframesVec(vec) => vec.len(),
@@ -54,6 +59,7 @@ impl Keyframes {
         }
     }
 
+    /// Returns `true` if there are no keyframes.
     pub fn is_empty(&self) -> bool {
         match self {
             Keyframes::KeyframesVec(vec) => vec.is_empty(),
@@ -61,10 +67,20 @@ impl Keyframes {
         }
     }
 
+    /// Returns the keyframe at the given index.
+    ///
+    /// - Returns `None` if index is out of bounds.
     pub fn get(&self, index: usize) -> Option<usize> {
         match self {
-            Keyframes::KeyframesVec(vec) => Some(vec[index]),
-            Keyframes::KeyframesRange(range) => Some(range.start + index),
+            Keyframes::KeyframesVec(vec) => vec.get(index).copied(),
+            Keyframes::KeyframesRange(range) => {
+                let value = range.start + index;
+                if value < range.end {
+                    Some(value)
+                } else {
+                    None
+                }
+            }
         }
     }
 }
@@ -167,7 +183,7 @@ impl AnimationClip2D {
         &self.keyframe_timestamps
     }
 
-    /// Ordered list of keyframes for this animation.
+    /// Keyframes for this animation.
     #[inline]
     pub fn keyframes(&self) -> &Keyframes {
         &self.keyframes

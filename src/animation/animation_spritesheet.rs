@@ -71,6 +71,6 @@ fn apply_animation_player_spritesheet(
 
         animation.frame = index;
         let keyframes = animation_clip.keyframes();
-        *texture_atlas_index = keyframes.get(index).unwrap();
+        *texture_atlas_index = keyframes.get(index).expect("index is constructed from keyframe_timestamps which ensures that the operation always succeeds.");
     }
 }

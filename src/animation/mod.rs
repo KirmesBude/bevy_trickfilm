@@ -6,9 +6,8 @@ mod animation_spritesheet;
 use crate::prelude::AnimationClip2D;
 use bevy::{
     animation::RepeatAnimation,
-    prelude::{
-        App, Component, Handle, IntoSystemConfigs, Plugin, ReflectComponent, SystemSet, Update,
-    },
+    app::PostUpdate,
+    prelude::{App, Component, Handle, IntoSystemConfigs, Plugin, ReflectComponent, SystemSet},
     reflect::Reflect,
 };
 
@@ -26,7 +25,7 @@ impl Plugin for AnimationPlayer2DPlugin {
         app.register_type::<AnimationPlayer2D>()
             .register_type::<PlayingAnimation2D>();
         app.add_systems(
-            Update,
+            PostUpdate,
             animation_player_spritesheet.in_set(AnimationPlayer2DSystemSet),
         );
     }
@@ -76,7 +75,7 @@ impl PlayingAnimation2D {
     ///
     /// Note: An animation with [`RepeatAnimation::Forever`] will never finish.
     /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.
-    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] in [`PostUpdate`] to react to it on the same frame.
     #[inline]
     pub fn just_finished(&self) -> bool {
         self.finished() && self.just_finished_cycle()
@@ -85,7 +84,7 @@ impl PlayingAnimation2D {
     /// Check if the playing animation has just finished a cycle.
     ///
     /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.
-    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] in [`PostUpdate`] to react to it on the same frame.
     #[inline]
     pub fn just_finished_cycle(&self) -> bool {
         self.completions_this_update > 0
@@ -179,7 +178,7 @@ impl AnimationPlayer2D {
     ///  
     /// Note: An animation with [`RepeatAnimation::Forever`] will never finish.  
     /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.  
-    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.  
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] in [`PostUpdate`] to react to it on the same frame.
     pub fn just_finished(&self) -> bool {
         self.animation.just_finished()
     }
@@ -187,7 +186,7 @@ impl AnimationPlayer2D {
     /// Check if the playing animation has just finished a cycle.
     ///  
     /// Note: This needs to be called in the [`bevy::prelude::Update`] schedule.  
-    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] to react to it on the same frame.  
+    /// Note: You should schedule it after [`AnimationPlayer2DSystemSet`] in [`PostUpdate`] to react to it on the same frame.
     pub fn just_finished_cycle(&self) -> bool {
         self.animation.just_finished_cycle()
     }

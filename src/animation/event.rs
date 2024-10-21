@@ -11,12 +11,57 @@ use super::{
 };
 
 /// AnimationEvents are triggered by the animation system if registered as such with the App.
-pub trait AnimationEvent: Event + GetTypeRegistration + FromReflect {
+pub trait AnimationEvent: Event + GetTypeRegistration + FromReflect + Clone {
     /// Implement this to be able to set the entity for a targeted event.
     /// Default implementation is a No-Op.
     fn set_entity(&mut self, entity: Entity) {
         let _ = entity;
         /* Default implementation is empty for non-targeted events */
+    }
+}
+
+#[derive(Debug, Resource)]
+struct AnimationEventCache<T>(HashMap<AssetId<AnimationClip2D>, HashMap<usize, Vec<T>>>);
+
+impl<T> Default for AnimationEventCache<T> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
+// This updates a cache resource for each Event added to the app
+// That way when processing animation for event sending, we already have a vector of T instead of Box<dyn Reflect>, so we only iterate through the events that are actually relecant (can be from_reflected to T)
+fn update_animation_event_cache<T: FromReflect>(
+    mut cache: ResMut<AnimationEventCache<T>>,
+    mut asset_events: EventReader<AssetEvent<AnimationClip2D>>,
+    animation_clips: Res<Assets<AnimationClip2D>>,
+) {
+    for asset_event in asset_events.read() {
+        match asset_event {
+            AssetEvent::Added { id }
+            | AssetEvent::Modified { id }
+            | AssetEvent::LoadedWithDependencies { id } => {
+                let clip = animation_clips.get(*id).unwrap();
+
+                let inner_map = clip
+                    .events()
+                    .iter()
+                    .map(|(frame, events)| {
+                        (
+                            *frame,
+                            events
+                                .iter()
+                                .filter_map(|event| T::from_reflect(event.as_reflect()))
+                                .collect(),
+                        )
+                    })
+                    .collect();
+                cache.0.entry(*id).insert(inner_map);
+            }
+            AssetEvent::Removed { id } | AssetEvent::Unused { id } => {
+                cache.0.remove(id);
+            }
+        }
     }
 }
 
@@ -26,26 +71,18 @@ pub fn default_entity() -> Entity {
 
 fn collect_events<T: AnimationEvent>(
     animation_players: Query<(Entity, &AnimationPlayer2D)>,
-    animation_clips: &Assets<AnimationClip2D>,
+    cache: &AnimationEventCache<T>,
 ) -> HashMap<Entity, Vec<T>> {
     animation_players
         .iter()
         .map(|(entity, animation_player)| {
-            let mut events = Vec::with_capacity(0);
-            if let Some(animation_clip) = animation_clips.get(animation_player.animation_clip()) {
+            let mut events: Vec<T> = Vec::with_capacity(0);
+            if let Some(event_map) = cache.0.get(&animation_player.animation_clip().id()) {
                 // TODO: I need a better way to detect frame changes here
                 // Get all events for this frame transition, if any
-                if let Some(reflected_events) =
-                    animation_clip.events().get(&animation_player.frame())
-                {
-                    events.reserve(reflected_events.len());
-                    for reflected_event in reflected_events {
-                        // TODO: Is this the most efficient way?
-                        if let Some(mut event) = T::from_reflect(reflected_event.as_reflect()) {
-                            event.set_entity(entity);
-                            events.push(event);
-                        }
-                    }
+                if let Some(animation_events) = event_map.get(&animation_player.frame()) {
+                    events = animation_events.clone();
+                    events.iter_mut().for_each(|event| event.set_entity(entity));
                 }
             }
             (entity, events)
@@ -56,9 +93,9 @@ fn collect_events<T: AnimationEvent>(
 fn send_animation_event<T: AnimationEvent>(
     mut event_writer: EventWriter<T>,
     animation_players: Query<(Entity, &AnimationPlayer2D)>,
-    animation_clips: Res<Assets<AnimationClip2D>>,
+    cache: Res<AnimationEventCache<T>>,
 ) {
-    let entity_event_map = collect_events::<T>(animation_players, &animation_clips);
+    let entity_event_map = collect_events::<T>(animation_players, &cache);
 
     for (_, events) in entity_event_map {
         event_writer.send_batch(events);
@@ -68,9 +105,9 @@ fn send_animation_event<T: AnimationEvent>(
 fn trigger_animation_event<T: AnimationEvent>(
     mut commands: Commands,
     animation_players: Query<(Entity, &AnimationPlayer2D)>,
-    animation_clips: Res<Assets<AnimationClip2D>>,
+    cache: Res<AnimationEventCache<T>>,
 ) {
-    let entity_event_map = collect_events::<T>(animation_players, &animation_clips);
+    let entity_event_map = collect_events::<T>(animation_players, &cache);
 
     for (entity, events) in entity_event_map {
         for event in events {
@@ -90,20 +127,27 @@ pub trait AnimationEventAppExtension {
 
 impl AnimationEventAppExtension for App {
     fn add_animation_event<T: AnimationEvent>(&mut self) -> &mut Self {
+        self.init_resource::<AnimationEventCache<T>>();
         self.add_event::<T>().register_type::<T>();
         self.add_systems(
             PostUpdate,
-            send_animation_event::<T>
+            (update_animation_event_cache::<T>, send_animation_event::<T>)
+                .chain()
                 .in_set(AnimationPlayer2DSystemSet)
                 .after(animation_player_spritesheet),
         )
     }
 
     fn add_animation_trigger<T: AnimationEvent>(&mut self) -> &mut Self {
+        self.init_resource::<AnimationEventCache<T>>(); // TODO: Problematic if both event and trigger?
         self.register_type::<T>(); // add_event is not necessary for observers
         self.add_systems(
             PostUpdate,
-            trigger_animation_event::<T>
+            (
+                update_animation_event_cache::<T>,
+                trigger_animation_event::<T>,
+            )
+                .chain() // This might update the cache twice if added as both an event and trigger
                 .in_set(AnimationPlayer2DSystemSet)
                 .after(animation_player_spritesheet),
         )

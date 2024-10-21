@@ -6,7 +6,7 @@ use syn::{parse_macro_input, parse_quote, DeriveInput};
 extern crate proc_macro;
 
 /// Derive macro for AnimationEvent
-#[proc_macro_derive(AnimationEvent)]
+#[proc_macro_derive(AnimationEvent, attributes(target))]
 pub fn derive_animation_event(input: TokenStream) -> TokenStream {
     let mut ast = parse_macro_input!(input as DeriveInput);
 
@@ -18,11 +18,44 @@ pub fn derive_animation_event(input: TokenStream) -> TokenStream {
     let struct_name = &ast.ident;
     let (impl_generics, type_generics, where_clause) = &ast.generics.split_for_impl();
 
-    TokenStream::from(quote! {
-        impl #impl_generics bevy_trickfilm::animation::event::AnimationEvent for #struct_name #type_generics #where_clause {
-            fn set_entity(&mut self, entity: Entity) {
-                self.entity = entity;
+    let mut target = None;
+
+    match ast.data {
+        // Only process structs
+        syn::Data::Struct(ref data_struct) => {
+            // Check the kind of fields the struct contains
+            // Structs with named fields
+            if let syn::Fields::Named(ref fields_named) = data_struct.fields {
+                // Iterate over the fields
+                for field in fields_named.named.iter() {
+                    // Get attributes #[..] on each field
+                    for attr in field.attrs.iter() {
+                        // Parse the attribute
+                        if let syn::Meta::Path(ref path) = attr.meta {
+                            if let Some(ident) = path.get_ident() {
+                                if ident == "target" {
+                                    target = Some(field.ident.clone());
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-    })
+        // Panic when we don't have a struct
+        _ => panic!("Must be a struct"),
+    }
+
+    match target {
+        Some(target) => TokenStream::from(quote! {
+            impl #impl_generics bevy_trickfilm::animation::event::AnimationEvent for #struct_name #type_generics #where_clause {
+                fn set_target(&mut self, target: EventTarget) {
+                    self.#target = target;
+                }
+            }
+        }),
+        None => TokenStream::from(quote! {
+            impl #impl_generics bevy_trickfilm::animation::event::AnimationEvent for #struct_name #type_generics #where_clause {}
+        }),
+    }
 }

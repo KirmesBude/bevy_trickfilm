@@ -14,9 +14,19 @@ use super::{
 pub trait AnimationEvent: Event + GetTypeRegistration + FromReflect + Clone {
     /// Implement this to be able to set the entity for a targeted event.
     /// Default implementation is a No-Op.
-    fn set_entity(&mut self, entity: Entity) {
-        let _ = entity;
+    fn set_target(&mut self, target: EventTarget) {
+        let _ = target;
         /* Default implementation is empty for non-targeted events */
+    }
+}
+
+/// Wrapper around entity to be used for EventTargets
+#[derive(Debug, Clone, Copy, Deref, Reflect)] //TODO: register type
+pub struct EventTarget(pub Entity);
+
+impl Default for EventTarget {
+    fn default() -> Self {
+        Self(Entity::PLACEHOLDER)
     }
 }
 
@@ -65,10 +75,6 @@ fn update_animation_event_cache<T: FromReflect>(
     }
 }
 
-pub fn default_entity() -> Entity {
-    Entity::PLACEHOLDER
-}
-
 fn collect_events<T: AnimationEvent>(
     animation_players: Query<(Entity, &AnimationPlayer2D)>,
     cache: &AnimationEventCache<T>,
@@ -82,7 +88,9 @@ fn collect_events<T: AnimationEvent>(
                 // Get all events for this frame transition, if any
                 if let Some(animation_events) = event_map.get(&animation_player.frame()) {
                     events = animation_events.clone();
-                    events.iter_mut().for_each(|event| event.set_entity(entity));
+                    events
+                        .iter_mut()
+                        .for_each(|event| event.set_target(EventTarget(entity)));
                 }
             }
             (entity, events)

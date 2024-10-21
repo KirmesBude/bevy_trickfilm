@@ -20,30 +20,29 @@ pub fn derive_animation_event(input: TokenStream) -> TokenStream {
 
     let mut target = None;
 
-    match ast.data {
-        // Only process structs
-        syn::Data::Struct(ref data_struct) => {
-            // Check the kind of fields the struct contains
-            // Structs with named fields
-            if let syn::Fields::Named(ref fields_named) = data_struct.fields {
-                // Iterate over the fields
-                for field in fields_named.named.iter() {
-                    // Get attributes #[..] on each field
-                    for attr in field.attrs.iter() {
-                        // Parse the attribute
-                        if let syn::Meta::Path(ref path) = attr.meta {
-                            if let Some(ident) = path.get_ident() {
-                                if ident == "target" {
-                                    target = Some(field.ident.clone());
-                                }
+    // Only process structs
+    if let syn::Data::Struct(ref data_struct) = ast.data {
+        // Check the kind of fields the struct contains
+        // Structs with named fields
+        if let syn::Fields::Named(ref fields_named) = data_struct.fields {
+            // Iterate over the fields
+            for field in fields_named.named.iter() {
+                // Get attributes #[..] on each field
+                for attr in field.attrs.iter() {
+                    // Parse the attribute
+                    if let syn::Meta::Path(ref path) = attr.meta {
+                        if let Some(ident) = path.get_ident() {
+                            if ident == "target" {
+                                if target.is_some() {
+                                    panic!("Multiple `#[target] attributes. Only a single target is supported.")
+                                };
+                                target = Some(field.ident.clone());
                             }
                         }
                     }
                 }
             }
         }
-        // Panic when we don't have a struct
-        _ => panic!("Must be a struct"),
     }
 
     match target {

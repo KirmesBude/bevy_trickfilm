@@ -36,6 +36,7 @@ struct PlayingAnimation2D {
     repeat: RepeatAnimation,
     speed: f32,
     elapsed: f32,
+    duration: f32,
     frame: usize,
     seek_time: f32,
     animation_clip: Handle<AnimationClip2D>,
@@ -49,6 +50,7 @@ impl Default for PlayingAnimation2D {
             repeat: Default::default(),
             speed: 1.0,
             elapsed: 0.0,
+            duration: 1.0,
             frame: 0,
             seek_time: 0.0,
             animation_clip: Default::default(),
@@ -93,6 +95,7 @@ impl PlayingAnimation2D {
     /// Update the animation given the delta time and the duration of the clip being played.
     #[inline]
     fn update(&mut self, delta: f32, clip_duration: f32) {
+        self.duration = clip_duration;
         self.completions_this_update = 0;
         if self.finished() {
             return;
@@ -257,6 +260,15 @@ impl AnimationPlayer2D {
     /// Note: This is independent of speed.
     pub fn elapsed(&self) -> f32 {
         self.animation.elapsed
+    }
+
+    /// Duration of the playing animation
+    ///
+    /// Note: This is independent of speed.
+    /// Note: This may be `0.0` right after setting the animation, make sure to handle that properly
+    /// e.g. when performing a division.
+    pub fn duration(&self) -> f32 {
+        self.animation.duration
     }
 
     /// Current frame of the animation

@@ -33,7 +33,7 @@ fn setup(
     commands.spawn((
         FrameText,
         TextBundle::from_section(
-            "current frame: 0",
+            "current frame: 0\nelapsed: 0.0\nduration: 0.0",
             TextStyle {
                 font_size: 24.0,
                 color: Color::WHITE,
@@ -105,5 +105,10 @@ fn update_frame_text(
         return;
     };
 
-    text.sections[0].value = format!("current frame: {}", animation_player.frame());
+    text.sections[0].value = format!(
+        "current frame: {}\nelapsed: {:.1}\nduration:{:.1}",
+        animation_player.frame(),
+        animation_player.elapsed(),
+        animation_player.duration()
+    );
 }

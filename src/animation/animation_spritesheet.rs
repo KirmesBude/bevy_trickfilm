@@ -26,6 +26,10 @@ fn run_animation_player_spritesheet(
     mut player: Mut<AnimationPlayer2D>,
     mut texture_atlas: Mut<TextureAtlas>,
 ) {
+    if let Some(animation_clip) = animation_clips.get(&player.animation.animation_clip) {
+        player.animation.duration = Some(animation_clip.duration());
+    }
+
     // Allow manual update of elapsed when paused
     let paused = player.paused;
     if paused && !player.is_changed() {

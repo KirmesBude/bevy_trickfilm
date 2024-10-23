@@ -105,10 +105,15 @@ fn update_frame_text(
         return;
     };
 
+    let duration = match animation_player.duration() {
+        Some(duration) => format!("{:.1}", duration),
+        None => "---".to_string(),
+    };
+
     text.sections[0].value = format!(
-        "current frame: {}\nelapsed: {:.1}\nduration:{:.1}",
+        "current frame: {}\nelapsed: {:.1}\nduration: {}",
         animation_player.frame(),
         animation_player.elapsed(),
-        animation_player.duration()
+        duration,
     );
 }

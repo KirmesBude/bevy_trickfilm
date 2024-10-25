@@ -47,6 +47,7 @@ fn update_animation_event_cache<T: FromReflect>(
     animation_clips: Res<Assets<AnimationClip2D>>,
 ) {
     for asset_event in asset_events.read() {
+        println!("{:?}", asset_event);
         match asset_event {
             AssetEvent::Added { id }
             | AssetEvent::Modified { id }

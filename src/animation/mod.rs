@@ -39,6 +39,7 @@ pub(crate) struct PlayingAnimation2D {
     repeat: RepeatAnimation,
     speed: f32,
     elapsed: f32,
+    duration: Option<f32>,
     pub(crate) last_frame: Option<usize>,
     frame: Option<usize>,
     seek_time: f32,
@@ -53,6 +54,7 @@ impl Default for PlayingAnimation2D {
             repeat: Default::default(),
             speed: 1.0,
             elapsed: 0.0,
+            duration: None,
             last_frame: None,
             frame: None,
             seek_time: 0.0,
@@ -262,6 +264,14 @@ impl AnimationPlayer2D {
     /// Note: This is independent of speed.
     pub fn elapsed(&self) -> f32 {
         self.animation.elapsed
+    }
+
+    /// Duration of the playing animation if one is set, otherwise `None`
+    ///
+    /// Note: This is independent of speed.
+    /// Note: Guaranteed to never return `Some(0.0)`.
+    pub fn duration(&self) -> Option<f32> {
+        self.animation.duration
     }
 
     /// Current frame of the animation

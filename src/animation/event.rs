@@ -47,27 +47,31 @@ fn update_animation_event_cache<T: FromReflect>(
     animation_clips: Res<Assets<AnimationClip2D>>,
 ) {
     for asset_event in asset_events.read() {
-        println!("{:?}", asset_event);
         match asset_event {
             AssetEvent::Added { id }
             | AssetEvent::Modified { id }
             | AssetEvent::LoadedWithDependencies { id } => {
-                let clip = animation_clips.get(*id).unwrap();
-
-                let inner_map = clip
-                    .events()
-                    .iter()
-                    .map(|(frame, events)| {
-                        (
-                            *frame,
-                            events
-                                .iter()
-                                .filter_map(|event| T::from_reflect(event.as_reflect()))
-                                .collect(),
-                        )
-                    })
-                    .collect();
-                cache.0.entry(*id).insert(inner_map);
+                if let Some(clip) = animation_clips.get(*id) {
+                    let inner_map = clip
+                        .events()
+                        .iter()
+                        .map(|(frame, events)| {
+                            (
+                                *frame,
+                                events
+                                    .iter()
+                                    .filter_map(|event| T::from_reflect(event.as_reflect()))
+                                    .collect(),
+                            )
+                        })
+                        .collect();
+                    cache.0.entry(*id).insert(inner_map);
+                } else {
+                    warn!(
+                        "Event {0:?} was triggered, but AssetId {1:?} does not yield an asset.",
+                        asset_event, id
+                    );
+                }
             }
             AssetEvent::Removed { id } | AssetEvent::Unused { id } => {
                 cache.0.remove(id);

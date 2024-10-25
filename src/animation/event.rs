@@ -84,13 +84,13 @@ fn collect_events<T: AnimationEvent>(
         .map(|(entity, animation_player)| {
             let mut events: Vec<T> = Vec::with_capacity(0);
             if let Some(event_map) = cache.0.get(&animation_player.animation_clip().id()) {
-                // TODO: I need a better way to detect frame changes here
-                // Get all events for this frame transition, if any
-                if let Some(animation_events) = event_map.get(&animation_player.frame()) {
-                    events = animation_events.clone();
-                    events
-                        .iter_mut()
-                        .for_each(|event| event.set_target(EventTarget(entity)));
+                if animation_player.animation.last_frame != animation_player.animation.frame {
+                    if let Some(animation_events) = event_map.get(&animation_player.frame()) {
+                        events = animation_events.clone();
+                        events
+                            .iter_mut()
+                            .for_each(|event| event.set_target(EventTarget(entity)));
+                    }
                 }
             }
             (entity, events)

@@ -162,7 +162,7 @@ impl AnimationClip2D {
 
         let events = events.unwrap_or_default();
         let max_event_frame = events.keys().max().cloned().unwrap_or(0);
-        if max_event_frame > keyframes_len {
+        if max_event_frame >= keyframes_len {
             return Err(AnimationClip2DError::InvalidFrame(
                 max_event_frame,
                 keyframes_len,

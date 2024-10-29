@@ -27,4 +27,5 @@ pub mod prelude {
     };
     pub use crate::asset::{Animation2DLoaderPlugin, AnimationClip2D, AnimationClip2DSet};
     pub use crate::Animation2DPlugin;
+    pub use bevy_trickfilm_derive::*;
 }

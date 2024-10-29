@@ -15,9 +15,8 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(Animation2DPlugin)
-        .add_event::<SampleEvent>()
+        // add_animation_event will add the event to the app, register the type and setup trickfilm internal resources and systems
         .add_animation_event::<SampleEvent>()
-        .register_type::<SampleEvent>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -26,9 +25,11 @@ fn main() {
         .run();
 }
 
+// This Event needs to implement AnimationEvent
 #[derive(Debug, Clone, Event, Reflect, AnimationEvent)]
 struct SampleEvent {
     #[reflect(skip_serializing)]
+    // This is necessary, because EventTarget is not given via the trickfilm file, but at runtime via the AnimationEvent trait
     #[target]
     target: EventTarget,
     msg: String,
@@ -122,6 +123,7 @@ fn update_frame_text(
     text.sections[0].value = format!("current frame: {}", animation_player.frame());
 }
 
+// You can easily react on your custom event just like a normal bevy event
 fn print_event(mut event_reader: EventReader<SampleEvent>) {
     for event in event_reader.read() {
         println!("{:?}", event);

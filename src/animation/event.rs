@@ -1,4 +1,4 @@
-//! This module animition event.
+//! This module implements everything necessary to support arbitrary events.
 //!
 
 use bevy::{prelude::*, reflect::GetTypeRegistration, utils::HashMap};
@@ -10,7 +10,7 @@ use super::{
     AnimationPlayer2DSystemSet,
 };
 
-/// AnimationEvents are triggered by the animation system if registered as such with the App.
+/// AnimationEvents are triggered by the animation system if registered as such with the App
 pub trait AnimationEvent: Event + GetTypeRegistration + FromReflect + Clone {
     /// Implement this to be able to set the entity for a targeted event.
     /// Default implementation is a No-Op.
@@ -21,7 +21,7 @@ pub trait AnimationEvent: Event + GetTypeRegistration + FromReflect + Clone {
 }
 
 /// Wrapper around entity to be used for EventTargets
-#[derive(Debug, Clone, Copy, Deref, Reflect)] //TODO: register type
+#[derive(Debug, Clone, Copy, Deref, Reflect)]
 pub struct EventTarget(pub Entity);
 
 impl Default for EventTarget {
@@ -40,7 +40,7 @@ impl<T> Default for AnimationEventCache<T> {
 }
 
 // This updates a cache resource for each Event added to the app
-// That way when processing animation for event sending, we already have a vector of T instead of Box<dyn Reflect>, so we only iterate through the events that are actually relecant (can be from_reflected to T)
+// That way when processing animation for event sending, we already have a vector of T instead of Box<dyn Reflect>, so we only iterate through the events that are actually relevant (can be from_reflected to T)
 fn update_animation_event_cache<T: FromReflect>(
     mut cache: ResMut<AnimationEventCache<T>>,
     mut asset_events: EventReader<AssetEvent<AnimationClip2D>>,
@@ -80,6 +80,8 @@ fn update_animation_event_cache<T: FromReflect>(
     }
 }
 
+// Collects events in a vector per entity for batching purposes
+// Also calls AnimationEvent's set_target
 fn collect_events<T: AnimationEvent>(
     animation_players: Query<(Entity, &AnimationPlayer2D)>,
     cache: &AnimationEventCache<T>,
@@ -103,6 +105,7 @@ fn collect_events<T: AnimationEvent>(
         .collect()
 }
 
+// Batch send events
 fn send_animation_event<T: AnimationEvent>(
     mut event_writer: EventWriter<T>,
     animation_players: Query<(Entity, &AnimationPlayer2D)>,
@@ -115,6 +118,7 @@ fn send_animation_event<T: AnimationEvent>(
     }
 }
 
+// Trigger events
 fn trigger_animation_event<T: AnimationEvent>(
     mut commands: Commands,
     animation_players: Query<(Entity, &AnimationPlayer2D)>,

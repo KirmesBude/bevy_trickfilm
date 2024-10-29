@@ -73,8 +73,9 @@ fn apply_animation_player_spritesheet(
             Err(i) => i - 1,
         };
 
-        animation.frame = index;
+        animation.last_frame = animation.frame;
+        animation.frame = Some(index);
         let keyframes = animation_clip.keyframes();
-        *texture_atlas_index = keyframes[index]
+        *texture_atlas_index = keyframes.get(index).expect("index is constructed from keyframe_timestamps which ensures that the operation always succeeds.");
     }
 }

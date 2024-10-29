@@ -2,6 +2,7 @@
 //!
 
 mod animation_spritesheet;
+pub mod event;
 
 use crate::prelude::AnimationClip2D;
 use bevy::{
@@ -10,8 +11,11 @@ use bevy::{
     prelude::{App, Component, Handle, IntoSystemConfigs, Plugin, ReflectComponent, SystemSet},
     reflect::Reflect,
 };
+use event::EventTarget;
 
 use self::animation_spritesheet::animation_player_spritesheet;
+
+pub use event::{AnimationEvent, AnimationEventAppExtension};
 
 /// A [`SystemSet`] to control where the animations are run
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
@@ -23,7 +27,8 @@ pub struct AnimationPlayer2DPlugin;
 impl Plugin for AnimationPlayer2DPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<AnimationPlayer2D>()
-            .register_type::<PlayingAnimation2D>();
+            .register_type::<PlayingAnimation2D>()
+            .register_type::<EventTarget>();
         app.add_systems(
             PostUpdate,
             animation_player_spritesheet.in_set(AnimationPlayer2DSystemSet),
@@ -32,12 +37,13 @@ impl Plugin for AnimationPlayer2DPlugin {
 }
 
 #[derive(Reflect)]
-struct PlayingAnimation2D {
+pub(crate) struct PlayingAnimation2D {
     repeat: RepeatAnimation,
     speed: f32,
     elapsed: f32,
     duration: Option<f32>,
-    frame: usize,
+    pub(crate) last_frame: Option<usize>,
+    frame: Option<usize>,
     seek_time: f32,
     animation_clip: Handle<AnimationClip2D>,
     completions: u32,
@@ -51,7 +57,8 @@ impl Default for PlayingAnimation2D {
             speed: 1.0,
             elapsed: 0.0,
             duration: None,
-            frame: 0,
+            last_frame: None,
+            frame: None,
             seek_time: 0.0,
             animation_clip: Default::default(),
             completions: 0,
@@ -138,7 +145,7 @@ impl PlayingAnimation2D {
 #[reflect(Component)]
 pub struct AnimationPlayer2D {
     paused: bool,
-    animation: PlayingAnimation2D,
+    pub(crate) animation: PlayingAnimation2D,
 }
 
 impl AnimationPlayer2D {
@@ -273,7 +280,7 @@ impl AnimationPlayer2D {
     ///
     /// This will be the same value as the index of the current animation in the spritesheet.
     pub fn frame(&self) -> usize {
-        self.animation.frame
+        self.animation.frame.unwrap_or(0)
     }
 
     /// Seek time inside of the animation. Always within the range [0.0, clip_duration].

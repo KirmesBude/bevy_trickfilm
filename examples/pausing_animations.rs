@@ -43,7 +43,7 @@ fn setup(
     };
 
     // Camera
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 
     // Prepare AnimationPlayer
     let animation = asset_server.load("gabe-idle-run-animation.trickfilm.ron#run");
@@ -53,12 +53,12 @@ fn setup(
 
     // SpriteSheet entity
     commands
-        .spawn(SpriteBundle {
-            transform: Transform::from_scale(Vec3::splat(6.0)),
-            texture: atlas_texture,
+        .spawn(Sprite {
+            image: atlas_texture,
+            texture_atlas: Some(texture_atlas),
             ..Default::default()
         })
-        .insert(texture_atlas)
+        .insert(Transform::from_scale(Vec3::splat(6.0)))
         .insert(animation_player);
 
     println!("Pasuing controls:");

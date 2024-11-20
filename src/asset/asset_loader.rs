@@ -2,7 +2,7 @@
 //!
 
 use bevy::{
-    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
+    asset::{io::Reader, AssetLoader, LoadContext},
     prelude::{AppTypeRegistry, FromWorld, World},
     reflect::TypeRegistryArc,
 };
@@ -49,11 +49,11 @@ impl AssetLoader for Animation2DLoader {
     type Settings = ();
     type Error = Animation2DLoaderError;
 
-    async fn load<'a, 'r, 'l>(
-        &'a self,
-        reader: &'a mut Reader<'r>,
-        _settings: &'a (),
-        load_context: &'a mut LoadContext<'l>,
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &(),
+        load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;

@@ -57,15 +57,15 @@ fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
 
     // SpriteSheet entity
     commands
-        .spawn(SpriteBundle {
-            transform: Transform::from_scale(Vec3::splat(6.0)),
-            texture: my_assets.gabe_texture.clone(),
+        .spawn(Sprite {
+            image: my_assets.gabe_texture.clone(),
+            texture_atlas: Some(TextureAtlas {
+                layout: my_assets.gabe_layout.clone(),
+                ..Default::default()
+            }),
             ..Default::default()
         })
-        .insert(TextureAtlas {
-            layout: my_assets.gabe_layout.clone(),
-            ..Default::default()
-        })
+        .insert(Transform::from_scale(Vec3::splat(6.0)))
         .insert(animation_player);
 }
 

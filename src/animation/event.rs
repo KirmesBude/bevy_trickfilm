@@ -60,7 +60,7 @@ fn update_animation_event_cache<T: FromReflect>(
                                 *frame,
                                 events
                                     .iter()
-                                    .filter_map(|event| T::from_reflect(event.as_reflect()))
+                                    .filter_map(|event| T::from_reflect(event.as_partial_reflect()))
                                     .collect(),
                             )
                         })

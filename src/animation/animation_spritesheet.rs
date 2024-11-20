@@ -1,6 +1,6 @@
 use bevy::{
     prelude::{Assets, DetectChanges, Mut, Query, Res},
-    sprite::TextureAtlas,
+    sprite::Sprite,
     time::Time,
 };
 
@@ -13,7 +13,7 @@ use super::{AnimationPlayer2D, PlayingAnimation2D};
 pub(crate) fn animation_player_spritesheet(
     time: Res<Time>,
     animation_clips: Res<Assets<AnimationClip2D>>,
-    mut query: Query<(&mut AnimationPlayer2D, &mut TextureAtlas)>,
+    mut query: Query<(&mut AnimationPlayer2D, &mut Sprite)>,
 ) {
     query.par_iter_mut().for_each(|(player, sprite)| {
         run_animation_player_spritesheet(&time, &animation_clips, player, sprite);
@@ -24,7 +24,7 @@ fn run_animation_player_spritesheet(
     time: &Time,
     animation_clips: &Assets<AnimationClip2D>,
     mut player: Mut<AnimationPlayer2D>,
-    mut texture_atlas: Mut<TextureAtlas>,
+    mut sprite: Mut<Sprite>,
 ) {
     if let Some(animation_clip) = animation_clips.get(&player.animation.animation_clip) {
         player.animation.duration = Some(animation_clip.duration());
@@ -36,13 +36,15 @@ fn run_animation_player_spritesheet(
         return;
     }
 
-    apply_animation_player_spritesheet(
-        time,
-        animation_clips,
-        &mut player.animation,
-        paused,
-        &mut texture_atlas.index,
-    );
+    if let Some(texture_atlas) = &mut sprite.texture_atlas.as_mut() {
+        apply_animation_player_spritesheet(
+            time,
+            animation_clips,
+            &mut player.animation,
+            paused,
+            &mut texture_atlas.index,
+        );
+    }
 }
 
 fn apply_animation_player_spritesheet(
@@ -55,7 +57,7 @@ fn apply_animation_player_spritesheet(
     if let Some(animation_clip) = animation_clips.get(&animation.animation_clip) {
         // We don't return early because seek_to() may have been called on the animation player.
         animation.update(
-            if paused { 0.0 } else { time.delta_seconds() },
+            if paused { 0.0 } else { time.delta_secs() },
             animation_clip.duration(),
         );
 

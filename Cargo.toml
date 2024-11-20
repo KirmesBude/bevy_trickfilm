@@ -15,13 +15,13 @@ exclude = ["/assets"]
 
 [dependencies]
 bevy_trickfilm_derive = { path = "derive", version = "0.9.0-dev" }
-bevy = { version = "0.14", default-features = false, features=["bevy_asset", "bevy_sprite", "bevy_animation"]}
+bevy = { git = "https://github.com/bevyengine/bevy.git", branch = "release-0.15.0", default-features = false, features=["bevy_asset", "bevy_sprite", "bevy_animation"]}
 serde = { version = "1", features = ["derive"] }
 ron = "0.8"
 thiserror = "1"
 
 [dev-dependencies]
-bevy = { version = "0.14", features = ["file_watcher"] }
+bevy = { git = "https://github.com/bevyengine/bevy.git", branch = "release-0.15.0", features = ["file_watcher"] }
 bevy_titan = "0.8.1"
 bevy_asset_loader = { version = "0.21", features = ["2d"] }
 

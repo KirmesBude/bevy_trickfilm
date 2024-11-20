@@ -50,12 +50,12 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     // SpriteSheet entity
     commands
-        .spawn(SpriteBundle {
-            transform: Transform::from_scale(Vec3::splat(6.0)),
-            texture: atlas_texture,
+        .spawn(Sprite {
+            image: atlas_texture,
+            texture_atlas: Some(texture_atlas),
             ..Default::default()
         })
-        .insert(texture_atlas)
+        .insert(Transform::from_scale(Vec3::splat(6.0)))
         .insert(animation_player);
 }
 

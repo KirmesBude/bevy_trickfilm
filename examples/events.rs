@@ -30,7 +30,7 @@ fn main() {
 struct SampleEvent {
     #[reflect(skip_serializing)]
     // This is necessary, because EventTarget is not given via the trickfilm file, but at runtime via the AnimationEvent trait
-    #[target]
+    #[animationevent(target)]
     target: EventTarget,
     msg: String,
 }

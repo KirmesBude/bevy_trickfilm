@@ -1,12 +1,12 @@
 /// Derive macros for bevy_trickfilm
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, parse_quote, DeriveInput};
+use syn::{parse_macro_input, parse_quote, DeriveInput, Ident};
 
 extern crate proc_macro;
 
 /// Derive macro for AnimationEvent
-#[proc_macro_derive(AnimationEvent, attributes(target))]
+#[proc_macro_derive(AnimationEvent, attributes(animationevent))]
 pub fn derive_animation_event(input: TokenStream) -> TokenStream {
     let mut ast = parse_macro_input!(input as DeriveInput);
 
@@ -32,11 +32,20 @@ pub fn derive_animation_event(input: TokenStream) -> TokenStream {
                     // Parse the attribute
                     if let syn::Meta::Path(ref path) = attr.meta {
                         if let Some(ident) = path.get_ident() {
-                            if ident == "target" {
-                                if target.is_some() {
-                                    panic!("Multiple `#[target] attributes. Only a single target is supported.")
-                                };
-                                target = Some(field.ident.clone());
+                            if ident == "animationevent" {
+                                if let Ok(arg) = attr.parse_args::<Ident>() {
+                                    if arg == "target" {
+                                        if target.is_some() {
+                                            panic!("Multiple `#[target] attributes. Only a single target is supported.")
+                                        };
+
+                                        target = Some(field.ident.clone());
+                                    } else {
+                                        panic!("Unknown argument {}", arg);
+                                    }
+                                } else {
+                                    panic!("animationevent attribute needs target arg");
+                                }
                             }
                         }
                     }

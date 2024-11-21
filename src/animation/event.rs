@@ -67,7 +67,7 @@ fn update_animation_event_cache<T: FromReflect>(
                         .collect();
                     cache.0.entry(*id).insert(inner_map);
                 } else {
-                    warn!(
+                    debug!(
                         "Event {0:?} was triggered, but AssetId {1:?} does not yield an asset.",
                         asset_event, id
                     );

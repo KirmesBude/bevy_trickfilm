@@ -8,6 +8,7 @@
 | bevy | bevy_trickfilm |
 |------|----------------|
 | main | main           |
+| 0.14 | 0.9.0          |
 | 0.14 | 0.7.0, 0.8.0   |
 | 0.13 | 0.6.0          |
 | 0.12 | 0.4.0, 0.5.0   |
@@ -18,6 +19,7 @@
 ## What is bevy_trickfilm?
 
 Simple plugin to load spritesheet animations from manifest files written in ron. The animations are not directly tied to a certain sprite sheet.
+Now support asset based, frame based animation events.
 You can combine this with plugins that add the ability to load a texture atlas from a manifest file. For example: [bevy_titan](https://github.com/KirmesBude/bevy_titan) or [bevy_heterogeneous_texture_atlas_loader](https://github.com/ickshonpe/bevy_heterogeneous_texture_atlas_loader).
 
 ## Quickstart
@@ -25,7 +27,7 @@ You can combine this with plugins that add the ability to load a texture atlas f
 
 ```toml, ignore
 # In your Cargo.toml
-bevy_trickfilm = "0.8"
+bevy_trickfilm = "0.9"
 ```
 
 ### animation_clip.trickfilm.ron
@@ -42,7 +44,7 @@ bevy_trickfilm = "0.8"
     ),
     "jump": (
         keyframes: KeyframesVec([10,11,12]),
-	    keyframe_timestamps: Some([0.0. 1.0, 3.0]),
+	    keyframe_timestamps: [0.0. 1.0, 3.0],
         duration: 0.4,
     ),
 }
@@ -73,12 +75,12 @@ fn load_texture_atlas(mut commands: Commands) {
     let layout_handle = /* Create your TextureAtlas and retrieve a handle to it */;
 
     commands
-        .spawn(SpriteBundle {
-            texture: texture_handle,
-            ..Default::default()
-        })
-        .insert(TextureAtlas {
-            layout: layout_handle,
+        .spawn(Sprite {
+            image: texture_handle,
+            texture_atlas: Some(TextureAtlas {
+                layout: layout_handle,
+                ..Default::default()
+            }),
             ..Default::default()
         })
         .insert(AnimationPlayer2D::default());

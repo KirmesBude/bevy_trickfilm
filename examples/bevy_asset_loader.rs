@@ -47,7 +47,7 @@ struct MyAssets {
 
 fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
     // Camera
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 
     // Prepare AnimationPlayer
     let mut animation_player = AnimationPlayer2D::default();

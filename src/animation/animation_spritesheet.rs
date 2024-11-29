@@ -35,7 +35,7 @@ fn run_animation_player_spritesheet<T: Component + FrameIndexAnimatable>(
         return;
     }
 
-    if let Some(index) = sprite.get_mut() {
+    if let Some(index) = sprite.get_frame_index_mut() {
         apply_animation_player_spritesheet(
             time,
             animation_clips,

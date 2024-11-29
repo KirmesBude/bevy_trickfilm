@@ -4,6 +4,8 @@
 mod animation_spritesheet;
 pub mod event;
 
+use std::marker::PhantomData;
+
 use crate::prelude::AnimationClip2D;
 use bevy::{
     animation::RepeatAnimation,
@@ -12,7 +14,7 @@ use bevy::{
     reflect::Reflect,
     sprite::Sprite,
 };
-use event::EventTarget;
+use event::{AnimationEventSystemSet, EventTarget};
 
 use self::animation_spritesheet::animation_player_spritesheet;
 
@@ -26,35 +28,52 @@ impl Plugin for AnimationPlayer2DPlugin {
         app.register_type::<AnimationPlayer2D>()
             .register_type::<PlayingAnimation2D>()
             .register_type::<EventTarget>();
-        app.add_systems(
-            PostUpdate,
-            (
-                animation_player_spritesheet::<Sprite>,
-                animation_player_spritesheet::<ImageNode>,
-            )
-                .in_set(Animation),
-        ); // TODO: Own plugin for users
+        app.add_plugins((
+            FrameIndexAnimationPlugin::<Sprite>::default(),
+            FrameIndexAnimationPlugin::<ImageNode>::default(),
+        ));
     }
 }
 
-/// Animatable trait for everything that shall be considerd by bevy_trickfilm and uses frame index based animation like TextureAtlas.
-/// Implemented for Sprite and ImageNode.
+/// Can be used to add frame index based animations on custom types.
+/// [Sprite] and [ImageNode] are already covered by [AnimationPlayer2DPlugin]
+pub struct FrameIndexAnimationPlugin<T: FrameIndexAnimatable + Component>(PhantomData<T>);
+
+impl<T: FrameIndexAnimatable + Component> Default for FrameIndexAnimationPlugin<T> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
+impl<T: FrameIndexAnimatable + Component> Plugin for FrameIndexAnimationPlugin<T> {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            PostUpdate,
+            animation_player_spritesheet::<T>
+                .in_set(Animation)
+                .before(AnimationEventSystemSet),
+        );
+    }
+}
+
+/// Animatable trait for everything that shall be considerd by bevy_trickfilm and uses frame index based animation like ['TextureAtlas'](bevy::sprite::TextureAtlas).
+/// Implemented for [Sprite] and [ImageNode].
 pub trait FrameIndexAnimatable {
     /// Get a reference to the frame index.
-    fn get(&self) -> Option<&usize>;
+    fn get_frame_index(&self) -> Option<&usize>;
 
     /// Get a mutable reference to the frame index.
-    fn get_mut(&mut self) -> Option<&mut usize>;
+    fn get_frame_index_mut(&mut self) -> Option<&mut usize>;
 }
 
 impl FrameIndexAnimatable for Sprite {
-    fn get(&self) -> Option<&usize> {
+    fn get_frame_index(&self) -> Option<&usize> {
         self.texture_atlas
             .as_ref()
             .map(|texture_atlas| &texture_atlas.index)
     }
 
-    fn get_mut(&mut self) -> Option<&mut usize> {
+    fn get_frame_index_mut(&mut self) -> Option<&mut usize> {
         self.texture_atlas
             .as_mut()
             .map(|texture_atlas| &mut texture_atlas.index)
@@ -62,13 +81,13 @@ impl FrameIndexAnimatable for Sprite {
 }
 
 impl FrameIndexAnimatable for ImageNode {
-    fn get(&self) -> Option<&usize> {
+    fn get_frame_index(&self) -> Option<&usize> {
         self.texture_atlas
             .as_ref()
             .map(|texture_atlas| &texture_atlas.index)
     }
 
-    fn get_mut(&mut self) -> Option<&mut usize> {
+    fn get_frame_index_mut(&mut self) -> Option<&mut usize> {
         self.texture_atlas
             .as_mut()
             .map(|texture_atlas| &mut texture_atlas.index)

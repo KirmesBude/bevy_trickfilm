@@ -8,8 +8,9 @@ use crate::prelude::AnimationClip2D;
 use bevy::{
     animation::RepeatAnimation,
     app::{Animation, PostUpdate},
-    prelude::{App, Component, Handle, IntoSystemConfigs, Plugin, ReflectComponent},
+    prelude::{App, Component, Handle, ImageNode, IntoSystemConfigs, Plugin, ReflectComponent},
     reflect::Reflect,
+    sprite::Sprite,
 };
 use event::EventTarget;
 
@@ -25,7 +26,52 @@ impl Plugin for AnimationPlayer2DPlugin {
         app.register_type::<AnimationPlayer2D>()
             .register_type::<PlayingAnimation2D>()
             .register_type::<EventTarget>();
-        app.add_systems(PostUpdate, animation_player_spritesheet.in_set(Animation));
+        app.add_systems(
+            PostUpdate,
+            (
+                animation_player_spritesheet::<Sprite>,
+                animation_player_spritesheet::<ImageNode>,
+            )
+                .in_set(Animation),
+        ); // TODO: Own plugin for users
+    }
+}
+
+/// Animatable trait for everything that shall be considerd by bevy_trickfilm and uses frame index based animation like TextureAtlas.
+/// Implemented for Sprite and ImageNode.
+pub trait FrameIndexAnimatable {
+    /// Get a reference to the frame index.
+    fn get(&self) -> Option<&usize>;
+
+    /// Get a mutable reference to the frame index.
+    fn get_mut(&mut self) -> Option<&mut usize>;
+}
+
+impl FrameIndexAnimatable for Sprite {
+    fn get(&self) -> Option<&usize> {
+        self.texture_atlas
+            .as_ref()
+            .map(|texture_atlas| &texture_atlas.index)
+    }
+
+    fn get_mut(&mut self) -> Option<&mut usize> {
+        self.texture_atlas
+            .as_mut()
+            .map(|texture_atlas| &mut texture_atlas.index)
+    }
+}
+
+impl FrameIndexAnimatable for ImageNode {
+    fn get(&self) -> Option<&usize> {
+        self.texture_atlas
+            .as_ref()
+            .map(|texture_atlas| &texture_atlas.index)
+    }
+
+    fn get_mut(&mut self) -> Option<&mut usize> {
+        self.texture_atlas
+            .as_mut()
+            .map(|texture_atlas| &mut texture_atlas.index)
     }
 }
 

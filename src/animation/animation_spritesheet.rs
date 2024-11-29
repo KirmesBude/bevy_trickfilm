@@ -1,30 +1,29 @@
 use bevy::{
-    prelude::{Assets, DetectChanges, Mut, Query, Res},
-    sprite::Sprite,
+    prelude::{Assets, Component, DetectChanges, Mut, Query, Res},
     time::Time,
 };
 
 use crate::asset::AnimationClip2D;
 
-use super::{AnimationPlayer2D, PlayingAnimation2D};
+use super::{AnimationPlayer2D, FrameIndexAnimatable, PlayingAnimation2D};
 
 /// System that will play all spritesheet animations, using any entity with an [`AnimationPlayer2D`]
 /// and a [`Handle<AnimationClip2D>`] as an animation root.
-pub(crate) fn animation_player_spritesheet(
+pub(crate) fn animation_player_spritesheet<T: Component + FrameIndexAnimatable>(
     time: Res<Time>,
     animation_clips: Res<Assets<AnimationClip2D>>,
-    mut query: Query<(&mut AnimationPlayer2D, &mut Sprite)>,
+    mut query: Query<(&mut AnimationPlayer2D, &mut T)>,
 ) {
     query.par_iter_mut().for_each(|(player, sprite)| {
         run_animation_player_spritesheet(&time, &animation_clips, player, sprite);
     });
 }
 
-fn run_animation_player_spritesheet(
+fn run_animation_player_spritesheet<T: Component + FrameIndexAnimatable>(
     time: &Time,
     animation_clips: &Assets<AnimationClip2D>,
     mut player: Mut<AnimationPlayer2D>,
-    mut sprite: Mut<Sprite>,
+    mut sprite: Mut<T>,
 ) {
     if let Some(animation_clip) = animation_clips.get(&player.animation.animation_clip) {
         player.animation.duration = Some(animation_clip.duration());
@@ -36,13 +35,13 @@ fn run_animation_player_spritesheet(
         return;
     }
 
-    if let Some(texture_atlas) = &mut sprite.texture_atlas.as_mut() {
+    if let Some(index) = sprite.get_mut() {
         apply_animation_player_spritesheet(
             time,
             animation_clips,
             &mut player.animation,
             paused,
-            &mut texture_atlas.index,
+            index,
         );
     }
 }

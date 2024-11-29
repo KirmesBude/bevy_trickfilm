@@ -148,7 +148,7 @@ impl AnimationEventAppExtension for App {
             (update_animation_event_cache::<T>, send_animation_event::<T>)
                 .chain()
                 .in_set(Animation)
-                .after(animation_player_spritesheet),
+                .after(animation_player_spritesheet::<Sprite>), //TODO: I need some proper syncpoint
         )
     }
 
@@ -163,7 +163,7 @@ impl AnimationEventAppExtension for App {
             )
                 .chain() // This might update the cache twice if added as both an event and trigger
                 .in_set(Animation)
-                .after(animation_player_spritesheet),
+                .after(animation_player_spritesheet::<Sprite>),
         )
     }
 }

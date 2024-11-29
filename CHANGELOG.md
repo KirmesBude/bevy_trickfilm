@@ -6,6 +6,7 @@ Support for asset based, frame based animation events :)
 Rework entire asset loading to allow for reflected animation events
 Add very simple frame based event trigger detection
 Some new interfaces on AnimationPlayer2D
+Use bevy provided Animation SystemSet instead of AnimationPlayer2DSystemSet
 
 v0.8.0
 ================================================================================================================================

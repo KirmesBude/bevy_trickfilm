@@ -1,14 +1,11 @@
 //! This module implements everything necessary to support arbitrary events.
 //!
 
-use bevy::{prelude::*, reflect::GetTypeRegistration, utils::HashMap};
+use bevy::{app::Animation, prelude::*, reflect::GetTypeRegistration, utils::HashMap};
 
 use crate::asset::AnimationClip2D;
 
-use super::{
-    animation_spritesheet::animation_player_spritesheet, AnimationPlayer2D,
-    AnimationPlayer2DSystemSet,
-};
+use super::{animation_spritesheet::animation_player_spritesheet, AnimationPlayer2D};
 
 /// AnimationEvents are triggered by the animation system if registered as such with the App
 pub trait AnimationEvent: Event + GetTypeRegistration + FromReflect + Clone {
@@ -150,7 +147,7 @@ impl AnimationEventAppExtension for App {
             PostUpdate,
             (update_animation_event_cache::<T>, send_animation_event::<T>)
                 .chain()
-                .in_set(AnimationPlayer2DSystemSet)
+                .in_set(Animation)
                 .after(animation_player_spritesheet),
         )
     }
@@ -165,7 +162,7 @@ impl AnimationEventAppExtension for App {
                 trigger_animation_event::<T>,
             )
                 .chain() // This might update the cache twice if added as both an event and trigger
-                .in_set(AnimationPlayer2DSystemSet)
+                .in_set(Animation)
                 .after(animation_player_spritesheet),
         )
     }

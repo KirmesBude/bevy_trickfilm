@@ -7,8 +7,8 @@ pub mod event;
 use crate::prelude::AnimationClip2D;
 use bevy::{
     animation::RepeatAnimation,
-    app::PostUpdate,
-    prelude::{App, Component, Handle, IntoSystemConfigs, Plugin, ReflectComponent, SystemSet},
+    app::{Animation, PostUpdate},
+    prelude::{App, Component, Handle, IntoSystemConfigs, Plugin, ReflectComponent},
     reflect::Reflect,
 };
 use event::EventTarget;
@@ -16,10 +16,6 @@ use event::EventTarget;
 use self::animation_spritesheet::animation_player_spritesheet;
 
 pub use event::{AnimationEvent, AnimationEventAppExtension};
-
-/// A [`SystemSet`] to control where the animations are run
-#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct AnimationPlayer2DSystemSet;
 
 /// Adds support for spritesheet animation playing.
 pub struct AnimationPlayer2DPlugin;
@@ -29,10 +25,7 @@ impl Plugin for AnimationPlayer2DPlugin {
         app.register_type::<AnimationPlayer2D>()
             .register_type::<PlayingAnimation2D>()
             .register_type::<EventTarget>();
-        app.add_systems(
-            PostUpdate,
-            animation_player_spritesheet.in_set(AnimationPlayer2DSystemSet),
-        );
+        app.add_systems(PostUpdate, animation_player_spritesheet.in_set(Animation));
     }
 }
 

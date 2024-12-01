@@ -1,6 +1,6 @@
 //! This example demonstrates how to pause or resume animations based on the supplied `State`.
 
-use bevy::{input::common_conditions::input_just_pressed, prelude::*};
+use bevy::{app::Animation, input::common_conditions::input_just_pressed, prelude::*};
 use bevy_trickfilm::prelude::*;
 
 /// This can also be done as a `SubState` or a `ComputedState`.
@@ -17,10 +17,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .init_state::<PauseState>()
-        .configure_sets(
-            PostUpdate,
-            AnimationPlayer2DSystemSet.run_if(in_state(PauseState::Running)),
-        )
+        .configure_sets(PostUpdate, Animation.run_if(in_state(PauseState::Running)))
         .add_plugins(Animation2DPlugin)
         .add_systems(Startup, setup)
         .add_systems(
@@ -43,7 +40,7 @@ fn setup(
     };
 
     // Camera
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 
     // Prepare AnimationPlayer
     let animation = asset_server.load("gabe-idle-run-animation.trickfilm.ron#run");
@@ -53,12 +50,12 @@ fn setup(
 
     // SpriteSheet entity
     commands
-        .spawn(SpriteBundle {
-            transform: Transform::from_scale(Vec3::splat(6.0)),
-            texture: atlas_texture,
+        .spawn(Sprite {
+            image: atlas_texture,
+            texture_atlas: Some(texture_atlas),
             ..Default::default()
         })
-        .insert(texture_atlas)
+        .insert(Transform::from_scale(Vec3::splat(6.0)))
         .insert(animation_player);
 
     println!("Pasuing controls:");

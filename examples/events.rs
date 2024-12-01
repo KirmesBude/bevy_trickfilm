@@ -46,17 +46,7 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    commands.spawn((
-        FrameText,
-        TextBundle::from_section(
-            "current frame: 0",
-            TextStyle {
-                font_size: 24.0,
-                color: Color::WHITE,
-                ..default()
-            },
-        ),
-    ));
+    commands.spawn((FrameText, Text::new("current frame: 0")));
 
     let animations = vec![
         asset_server.load("gabe-idle-run-animation-events.trickfilm.ron#run"),
@@ -71,7 +61,7 @@ fn setup(
     };
 
     // Camera
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 
     // Prepare AnimationPlayer
     let mut animation_player = AnimationPlayer2D::default();
@@ -82,12 +72,12 @@ fn setup(
 
     // SpriteSheet entity
     commands
-        .spawn(SpriteBundle {
-            transform: Transform::from_scale(Vec3::splat(6.0)),
-            texture: atlas_texture,
+        .spawn(Sprite {
+            image: atlas_texture,
+            texture_atlas: Some(texture_atlas),
             ..Default::default()
         })
-        .insert(texture_atlas)
+        .insert(Transform::from_scale(Vec3::splat(6.0)))
         .insert(animation_player);
 }
 
@@ -120,7 +110,7 @@ fn update_frame_text(
         return;
     };
 
-    text.sections[0].value = format!("current frame: {}", animation_player.frame());
+    text.0 = format!("current frame: {}", animation_player.frame());
 }
 
 // You can easily react on your custom event just like a normal bevy event

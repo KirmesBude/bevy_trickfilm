@@ -32,14 +32,7 @@ fn setup(
 ) {
     commands.spawn((
         FrameText,
-        TextBundle::from_section(
-            "current frame: 0\nelapsed: 0.0\nduration: 0.0",
-            TextStyle {
-                font_size: 24.0,
-                color: Color::WHITE,
-                ..default()
-            },
-        ),
+        Text::new("current frame: 0\nelapsed: 0.0\nduration: 0.0"),
     ));
 
     // Load all animations
@@ -56,7 +49,7 @@ fn setup(
     };
 
     // Camera
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 
     // Prepare AnimationPlayer
     let mut animation_player = AnimationPlayer2D::default();
@@ -67,12 +60,12 @@ fn setup(
 
     // SpriteSheet entity
     commands
-        .spawn(SpriteBundle {
-            transform: Transform::from_scale(Vec3::splat(6.0)),
-            texture: atlas_texture,
+        .spawn(Sprite {
+            image: atlas_texture,
+            texture_atlas: Some(texture_atlas),
             ..Default::default()
         })
-        .insert(texture_atlas)
+        .insert(Transform::from_scale(Vec3::splat(6.0)))
         .insert(animation_player);
 }
 
@@ -110,7 +103,7 @@ fn update_frame_text(
         None => "---".to_string(),
     };
 
-    text.sections[0].value = format!(
+    text.0 = format!(
         "current frame: {}\nelapsed: {:.1}\nduration: {}",
         animation_player.frame(),
         animation_player.elapsed(),

@@ -149,19 +149,40 @@ pub struct AnimationPlayer2D {
 }
 
 impl AnimationPlayer2D {
-    /// Start playing an animation, resetting state of the player.
-    pub fn start(&mut self, handle: Handle<AnimationClip2D>) -> &mut Self {
+    fn start_from_time(
+        &mut self,
+        handle: Handle<AnimationClip2D>,
+        elapsed: f32,
+        seek_time: f32,
+    ) -> &mut Self {
         self.animation = PlayingAnimation2D {
             animation_clip: handle,
+            elapsed,
+            seek_time,
             ..Default::default()
         };
         self
+    }
+
+    /// Start playing an animation, resetting state of the player.
+    pub fn start(&mut self, handle: Handle<AnimationClip2D>) -> &mut Self {
+        self.start_from_time(handle, 0.0, 0.0)
     }
 
     /// Start playing an animation, resetting state of the player, unless the requested animation is already playing.
     pub fn play(&mut self, handle: Handle<AnimationClip2D>) -> &mut Self {
         if self.animation.animation_clip != handle || self.paused() {
             self.start(handle);
+        }
+        self
+    }
+
+    /// Start playing an animation from the current `seek_time` and `elapsed` state.
+    ///
+    /// This should only be called on animations that have the same duration.
+    pub fn play_continue(&mut self, handle: Handle<AnimationClip2D>) -> &mut Self {
+        if self.animation.animation_clip != handle || self.paused() {
+            self.start_from_time(handle, self.animation.elapsed, self.animation.seek_time);
         }
         self
     }

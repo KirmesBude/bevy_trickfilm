@@ -30,8 +30,8 @@ pub fn derive_animation_event(input: TokenStream) -> TokenStream {
                 // Get attributes #[..] on each field
                 for attr in field.attrs.iter() {
                     // Parse the attribute
-                    if let syn::Meta::Path(ref path) = attr.meta {
-                        if let Some(ident) = path.get_ident() {
+                    if let syn::Meta::List(ref list) = attr.meta {
+                        if let Some(ident) = list.path.get_ident() {
                             if ident == "animationevent" {
                                 if let Ok(arg) = attr.parse_args::<Ident>() {
                                     if arg == "target" {

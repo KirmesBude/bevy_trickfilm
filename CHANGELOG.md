@@ -1,3 +1,13 @@
+v0.9.0
+================================================================================================================================
+Support for asset based, frame based animation events :)
+- New animation event example
+- New animation event derive macro for entity targeted events
+Rework entire asset loading to allow for reflected animation events
+Add very simple frame based event trigger detection
+Some new interfaces on AnimationPlayer2D
+Use bevy provided Animation SystemSet instead of AnimationPlayer2DSystemSet
+
 v0.8.0
 ================================================================================================================================
 Support and recommend .trickfilm.ron file extension, .trickfilm still works, but is no longer recommended.

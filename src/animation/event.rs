@@ -1,14 +1,15 @@
 //! This module implements everything necessary to support arbitrary events.
 //!
 
-use bevy::{prelude::*, reflect::GetTypeRegistration, utils::HashMap};
+use bevy::{app::Animation, prelude::*, reflect::GetTypeRegistration, utils::HashMap};
 
 use crate::asset::AnimationClip2D;
 
-use super::{
-    animation_spritesheet::animation_player_spritesheet, AnimationPlayer2D,
-    AnimationPlayer2DSystemSet,
-};
+use super::AnimationPlayer2D;
+
+/// SystemSet to order animation playing and animation events
+#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, SystemSet)]
+pub(crate) struct AnimationEventSystemSet;
 
 /// AnimationEvents are triggered by the animation system if registered as such with the App
 pub trait AnimationEvent: Event + GetTypeRegistration + FromReflect + Clone {
@@ -60,7 +61,7 @@ fn update_animation_event_cache<T: FromReflect>(
                                 *frame,
                                 events
                                     .iter()
-                                    .filter_map(|event| T::from_reflect(event.as_reflect()))
+                                    .filter_map(|event| T::from_reflect(event.as_partial_reflect()))
                                     .collect(),
                             )
                         })
@@ -142,31 +143,49 @@ pub trait AnimationEventAppExtension {
     fn add_animation_trigger<T: AnimationEvent>(&mut self) -> &mut Self;
 }
 
+fn add_animation_cache<T: AnimationEvent>(app: &mut App) {
+    // Handle caching, if it does not already exist
+    if app
+        .world()
+        .get_resource::<AnimationEventCache<T>>()
+        .is_none()
+    {
+        app.init_resource::<AnimationEventCache<T>>();
+        app.add_systems(
+            PostUpdate,
+            update_animation_event_cache::<T>
+                .in_set(Animation)
+                .in_set(AnimationEventSystemSet),
+        );
+    }
+
+    app.register_type::<T>();
+}
+
 impl AnimationEventAppExtension for App {
     fn add_animation_event<T: AnimationEvent>(&mut self) -> &mut Self {
-        self.init_resource::<AnimationEventCache<T>>();
-        self.add_event::<T>().register_type::<T>();
+        add_animation_cache::<T>(self);
+
+        self.add_event::<T>();
         self.add_systems(
             PostUpdate,
-            (update_animation_event_cache::<T>, send_animation_event::<T>)
-                .chain()
-                .in_set(AnimationPlayer2DSystemSet)
-                .after(animation_player_spritesheet),
+            send_animation_event::<T>
+                .in_set(Animation)
+                .in_set(AnimationEventSystemSet)
+                .after(update_animation_event_cache::<T>),
         )
     }
 
     fn add_animation_trigger<T: AnimationEvent>(&mut self) -> &mut Self {
-        self.init_resource::<AnimationEventCache<T>>(); // TODO: Problematic if both event and trigger?
-        self.register_type::<T>(); // add_event is not necessary for observers
+        add_animation_cache::<T>(self);
+
+        // add_event is not necessary for observers
         self.add_systems(
             PostUpdate,
-            (
-                update_animation_event_cache::<T>,
-                trigger_animation_event::<T>,
-            )
-                .chain() // This might update the cache twice if added as both an event and trigger
-                .in_set(AnimationPlayer2DSystemSet)
-                .after(animation_player_spritesheet),
+            trigger_animation_event::<T>
+                .in_set(Animation)
+                .in_set(AnimationEventSystemSet)
+                .after(update_animation_event_cache::<T>),
         )
     }
 }

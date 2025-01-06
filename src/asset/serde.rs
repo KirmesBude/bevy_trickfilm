@@ -2,7 +2,7 @@ use bevy::{
     asset::LoadContext,
     reflect::{
         serde::{ReflectDeserializer, TypeRegistrationDeserializer, TypedReflectDeserializer},
-        Reflect, TypeRegistry,
+        PartialReflect, TypeRegistry,
     },
     utils::{HashMap, HashSet},
 };
@@ -168,7 +168,7 @@ struct AnimationEventsMapDeserializer<'a> {
 }
 
 impl<'a, 'de> DeserializeSeed<'de> for AnimationEventsMapDeserializer<'a> {
-    type Value = HashMap<usize, Vec<Box<dyn Reflect>>>;
+    type Value = HashMap<usize, Vec<Box<dyn PartialReflect>>>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
@@ -185,7 +185,7 @@ struct AnimationEventsMapVisitor<'a> {
 }
 
 impl<'a, 'de> Visitor<'de> for AnimationEventsMapVisitor<'a> {
-    type Value = HashMap<usize, Vec<Box<dyn Reflect>>>;
+    type Value = HashMap<usize, Vec<Box<dyn PartialReflect>>>;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         formatter.write_str("map of events")
@@ -213,7 +213,7 @@ struct AnimationEventsDeserializer<'a> {
 }
 
 impl<'a, 'de> DeserializeSeed<'de> for AnimationEventsDeserializer<'a> {
-    type Value = Vec<Box<dyn Reflect>>;
+    type Value = Vec<Box<dyn PartialReflect>>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
@@ -230,7 +230,7 @@ struct AnimationEventsVisitor<'a> {
 }
 
 impl<'a, 'de> Visitor<'de> for AnimationEventsVisitor<'a> {
-    type Value = Vec<Box<dyn Reflect>>;
+    type Value = Vec<Box<dyn PartialReflect>>;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         formatter.write_str("map of reflect types")

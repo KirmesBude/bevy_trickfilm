@@ -10,7 +10,7 @@ use std::ops::Range;
 use ::serde::Deserialize;
 use bevy::{
     prelude::{App, Asset, AssetApp, Handle, Plugin},
-    reflect::{Reflect, TypePath},
+    reflect::{PartialReflect, TypePath},
     utils::HashMap,
 };
 use thiserror::Error;
@@ -94,7 +94,7 @@ pub struct AnimationClip2D {
     keyframes: Keyframes,
     /// Total duration of this animation clip in seconds.
     duration: f32,
-    events: HashMap<usize, Vec<Box<dyn Reflect>>>,
+    events: HashMap<usize, Vec<Box<dyn PartialReflect>>>,
 }
 
 /// Possible errors that can be produced by [`AnimationClip2D`]
@@ -121,7 +121,7 @@ impl AnimationClip2D {
         keyframe_timestamps: Option<Vec<f32>>,
         keyframes: Keyframes,
         duration: f32,
-        events: Option<HashMap<usize, Vec<Box<dyn Reflect>>>>,
+        events: Option<HashMap<usize, Vec<Box<dyn PartialReflect>>>>,
     ) -> Result<Self, AnimationClip2DError> {
         let keyframes_len = keyframes.len();
 
@@ -197,7 +197,7 @@ impl AnimationClip2D {
 
     /// All reflected events for this animation clip identified by their associated frame.
     #[inline]
-    pub fn events(&self) -> &HashMap<usize, Vec<Box<dyn Reflect>>> {
+    pub fn events(&self) -> &HashMap<usize, Vec<Box<dyn PartialReflect>>> {
         &self.events
     }
 }

@@ -18,7 +18,7 @@ pub struct AnimationClip2DSetDeserializer<'a, 'l> {
     pub load_context: &'a mut LoadContext<'l>,
 }
 
-impl<'a, 'l, 'de> DeserializeSeed<'de> for AnimationClip2DSetDeserializer<'a, 'l> {
+impl<'de> DeserializeSeed<'de> for AnimationClip2DSetDeserializer<'_, '_> {
     type Value = AnimationClip2DSet;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -40,7 +40,7 @@ struct AnimationClip2DSetMapVisitor<'a, 'l> {
     pub load_context: &'a mut LoadContext<'l>,
 }
 
-impl<'a, 'l, 'de> Visitor<'de> for AnimationClip2DSetMapVisitor<'a, 'l> {
+impl<'de> Visitor<'de> for AnimationClip2DSetMapVisitor<'_, '_> {
     type Value = AnimationClip2DSet;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -82,7 +82,7 @@ struct AnimationClip2DDeserializer<'a> {
     pub type_registry: &'a TypeRegistry,
 }
 
-impl<'a, 'de> DeserializeSeed<'de> for AnimationClip2DDeserializer<'a> {
+impl<'de> DeserializeSeed<'de> for AnimationClip2DDeserializer<'_> {
     type Value = AnimationClip2D;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -108,7 +108,7 @@ struct AnimationClip2DVisitor<'a> {
     pub type_registry: &'a TypeRegistry,
 }
 
-impl<'a, 'de> Visitor<'de> for AnimationClip2DVisitor<'a> {
+impl<'de> Visitor<'de> for AnimationClip2DVisitor<'_> {
     type Value = AnimationClip2D;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -167,7 +167,7 @@ struct AnimationEventsMapDeserializer<'a> {
     pub type_registry: &'a TypeRegistry,
 }
 
-impl<'a, 'de> DeserializeSeed<'de> for AnimationEventsMapDeserializer<'a> {
+impl<'de> DeserializeSeed<'de> for AnimationEventsMapDeserializer<'_> {
     type Value = HashMap<usize, Vec<Box<dyn PartialReflect>>>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -184,7 +184,7 @@ struct AnimationEventsMapVisitor<'a> {
     pub type_registry: &'a TypeRegistry,
 }
 
-impl<'a, 'de> Visitor<'de> for AnimationEventsMapVisitor<'a> {
+impl<'de> Visitor<'de> for AnimationEventsMapVisitor<'_> {
     type Value = HashMap<usize, Vec<Box<dyn PartialReflect>>>;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -212,7 +212,7 @@ struct AnimationEventsDeserializer<'a> {
     pub type_registry: &'a TypeRegistry,
 }
 
-impl<'a, 'de> DeserializeSeed<'de> for AnimationEventsDeserializer<'a> {
+impl<'de> DeserializeSeed<'de> for AnimationEventsDeserializer<'_> {
     type Value = Vec<Box<dyn PartialReflect>>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -229,7 +229,7 @@ struct AnimationEventsVisitor<'a> {
     pub type_registry: &'a TypeRegistry,
 }
 
-impl<'a, 'de> Visitor<'de> for AnimationEventsVisitor<'a> {
+impl<'de> Visitor<'de> for AnimationEventsVisitor<'_> {
     type Value = Vec<Box<dyn PartialReflect>>;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {

@@ -23,6 +23,12 @@ pub use event::{AnimationEvent, AnimationEventAppExtension};
 /// Adds support for spritesheet animation playing.
 pub struct AnimationPlayer2DPlugin<T: Default = ()>(PhantomData<T>);
 
+impl<T: Default> Default for AnimationPlayer2DPlugin<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Default> AnimationPlayer2DPlugin<T> {
     /// TODO: New
     pub fn new() -> Self {

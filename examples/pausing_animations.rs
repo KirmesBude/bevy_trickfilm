@@ -45,7 +45,7 @@ fn setup(
     // Prepare AnimationPlayer
     let animation = asset_server.load("gabe-idle-run-animation.trickfilm.ron#run");
 
-    let mut animation_player = AnimationPlayer2D::default();
+    let mut animation_player = AnimationPlayer2D::<()>::default();
     animation_player.play(animation.clone()).repeat();
 
     // SpriteSheet entity

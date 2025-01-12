@@ -42,7 +42,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2d);
 
     // Prepare AnimationPlayer
-    let mut animation_player = AnimationPlayer2D::default();
+    let mut animation_player = AnimationPlayer2D::<()>::default();
     animation_player.play(animations[0].clone_weak()).repeat();
 
     // Insert a resource with the current animation information

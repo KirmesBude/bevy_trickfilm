@@ -50,7 +50,7 @@ fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
     commands.spawn(Camera2d);
 
     // Prepare AnimationPlayer
-    let mut animation_player = AnimationPlayer2D::<()>::default();
+    let mut animation_player = AnimationPlayer2D::default();
     animation_player
         .play(my_assets.animations[0].clone_weak())
         .repeat();

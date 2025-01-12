@@ -217,7 +217,7 @@ impl PlayingAnimation2D {
 }
 
 /// Animation controls
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Reflect)]
 #[reflect(Component)]
 pub struct AnimationPlayer2D<T: Default = ()> {
     paused: bool,
@@ -226,7 +226,22 @@ pub struct AnimationPlayer2D<T: Default = ()> {
     time: PhantomData<T>,
 }
 
+impl Default for AnimationPlayer2D<()> {
+    fn default() -> Self {
+        Self { paused: Default::default(), animation: Default::default(), time: Default::default() }
+    }
+}
+
 impl<T: Default> AnimationPlayer2D<T> {
+    /* TODO: new */
+    pub fn new() -> Self {
+        Self {
+            paused: Default::default(),
+            animation: Default::default(),
+            time: Default::default(),
+        }
+    }
+
     fn start_from_time(
         &mut self,
         handle: Handle<AnimationClip2D>,

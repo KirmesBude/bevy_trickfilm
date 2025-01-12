@@ -228,12 +228,16 @@ pub struct AnimationPlayer2D<T: Default = ()> {
 
 impl Default for AnimationPlayer2D<()> {
     fn default() -> Self {
-        Self { paused: Default::default(), animation: Default::default(), time: Default::default() }
+        Self {
+            paused: Default::default(),
+            animation: Default::default(),
+            time: Default::default(),
+        }
     }
 }
 
 impl<T: Default> AnimationPlayer2D<T> {
-    /* TODO: new */
+    /// TODO: new player
     pub fn new() -> Self {
         Self {
             paused: Default::default(),

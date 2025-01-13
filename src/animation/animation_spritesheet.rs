@@ -15,7 +15,7 @@ pub(crate) fn animation_player_spritesheet<
 >(
     time: Res<Time<T>>,
     animation_clips: Res<Assets<AnimationClip2D>>,
-    mut query: Query<(&mut AnimationPlayer2D, &mut C)>,
+    mut query: Query<(&mut AnimationPlayer2D<T>, &mut C)>,
 ) {
     query.par_iter_mut().for_each(|(player, sprite)| {
         run_animation_player_spritesheet(&time, &animation_clips, player, sprite);
@@ -28,7 +28,7 @@ fn run_animation_player_spritesheet<
 >(
     time: &Time<T>,
     animation_clips: &Assets<AnimationClip2D>,
-    mut player: Mut<AnimationPlayer2D>,
+    mut player: Mut<AnimationPlayer2D<T>>,
     mut sprite: Mut<C>,
 ) {
     if let Some(animation_clip) = animation_clips.get(&player.animation.animation_clip) {

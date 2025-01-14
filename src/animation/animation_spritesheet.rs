@@ -9,21 +9,27 @@ use super::{AnimationPlayer2D, FrameIndexAnimatable, PlayingAnimation2D};
 
 /// System that will play all spritesheet animations, using any entity with an [`AnimationPlayer2D`]
 /// and a [`Handle<AnimationClip2D>`] as an animation root.
-pub(crate) fn animation_player_spritesheet<T: Component + FrameIndexAnimatable>(
-    time: Res<Time>,
+pub(crate) fn animation_player_spritesheet<
+    C: Component + FrameIndexAnimatable,
+    T: Default + Send + Sync + 'static,
+>(
+    time: Res<Time<T>>,
     animation_clips: Res<Assets<AnimationClip2D>>,
-    mut query: Query<(&mut AnimationPlayer2D, &mut T)>,
+    mut query: Query<(&mut AnimationPlayer2D<T>, &mut C)>,
 ) {
     query.par_iter_mut().for_each(|(player, sprite)| {
         run_animation_player_spritesheet(&time, &animation_clips, player, sprite);
     });
 }
 
-fn run_animation_player_spritesheet<T: Component + FrameIndexAnimatable>(
-    time: &Time,
+fn run_animation_player_spritesheet<
+    C: Component + FrameIndexAnimatable,
+    T: Default + Send + Sync + 'static,
+>(
+    time: &Time<T>,
     animation_clips: &Assets<AnimationClip2D>,
-    mut player: Mut<AnimationPlayer2D>,
-    mut sprite: Mut<T>,
+    mut player: Mut<AnimationPlayer2D<T>>,
+    mut sprite: Mut<C>,
 ) {
     if let Some(animation_clip) = animation_clips.get(&player.animation.animation_clip) {
         player.animation.duration = Some(animation_clip.duration());
@@ -46,8 +52,8 @@ fn run_animation_player_spritesheet<T: Component + FrameIndexAnimatable>(
     }
 }
 
-fn apply_animation_player_spritesheet(
-    time: &Time,
+fn apply_animation_player_spritesheet<T: Default + Send + Sync + 'static>(
+    time: &Time<T>,
     animation_clips: &Assets<AnimationClip2D>,
     animation: &mut PlayingAnimation2D,
     paused: bool,

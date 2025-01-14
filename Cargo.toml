@@ -44,3 +44,7 @@ path = "examples/pausing_animations.rs"
 [[example]]
 name = "events"
 path = "examples/events.rs"
+
+[[example]]
+name = "demo_time"
+path = "examples/demo_time.rs"

@@ -42,8 +42,8 @@ impl<T: Default + Send + Sync + 'static + TypePath> Plugin for AnimationPlayer2D
             .register_type::<PlayingAnimation2D>()
             .register_type::<EventTarget>();
         app.add_plugins((
-            FrameIndexAnimationPlugin::<Sprite, ()>::default(),
-            FrameIndexAnimationPlugin::<ImageNode, ()>::default(),
+            FrameIndexAnimationPlugin::<Sprite, T>::default(),
+            FrameIndexAnimationPlugin::<ImageNode, T>::default(),
         ));
     }
 }

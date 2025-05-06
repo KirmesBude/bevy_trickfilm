@@ -11,7 +11,7 @@ use bevy::{
     animation::RepeatAnimation,
     app::{Animation, PostUpdate},
     prelude::{App, Component, Handle, ImageNode, IntoSystemConfigs, Plugin, ReflectComponent},
-    reflect::Reflect,
+    reflect::{Reflect, TypePath},
     sprite::Sprite,
 };
 use event::{AnimationEventSystemSet, EventTarget};
@@ -21,35 +21,53 @@ use self::animation_spritesheet::animation_player_spritesheet;
 pub use event::{AnimationEvent, AnimationEventAppExtension};
 
 /// Adds support for spritesheet animation playing.
-pub struct AnimationPlayer2DPlugin;
+pub struct AnimationPlayer2DPlugin<T: Default = ()>(PhantomData<T>);
 
-impl Plugin for AnimationPlayer2DPlugin {
+impl<T: Default> Default for AnimationPlayer2DPlugin<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T: Default> AnimationPlayer2DPlugin<T> {
+    /// Creates a new AnimationPlayer2DPlugin
+    pub fn new() -> Self {
+        Self(Default::default())
+    }
+}
+
+impl<T: Default + Send + Sync + 'static + TypePath> Plugin for AnimationPlayer2DPlugin<T> {
     fn build(&self, app: &mut App) {
-        app.register_type::<AnimationPlayer2D>()
+        app.register_type::<AnimationPlayer2D<T>>()
             .register_type::<PlayingAnimation2D>()
             .register_type::<EventTarget>();
         app.add_plugins((
-            FrameIndexAnimationPlugin::<Sprite>::default(),
-            FrameIndexAnimationPlugin::<ImageNode>::default(),
+            FrameIndexAnimationPlugin::<Sprite, T>::default(),
+            FrameIndexAnimationPlugin::<ImageNode, T>::default(),
         ));
     }
 }
 
 /// Can be used to add frame index based animations on custom types.
 /// [Sprite] and [ImageNode] are already covered by [AnimationPlayer2DPlugin]
-pub struct FrameIndexAnimationPlugin<T: FrameIndexAnimatable + Component>(PhantomData<T>);
+pub struct FrameIndexAnimationPlugin<C: FrameIndexAnimatable + Component, T: Default>(
+    PhantomData<C>,
+    PhantomData<T>,
+);
 
-impl<T: FrameIndexAnimatable + Component> Default for FrameIndexAnimationPlugin<T> {
+impl<C: FrameIndexAnimatable + Component, T: Default> Default for FrameIndexAnimationPlugin<C, T> {
     fn default() -> Self {
-        Self(Default::default())
+        Self(Default::default(), Default::default())
     }
 }
 
-impl<T: FrameIndexAnimatable + Component> Plugin for FrameIndexAnimationPlugin<T> {
+impl<C: FrameIndexAnimatable + Component, T: Default + Send + Sync + 'static> Plugin
+    for FrameIndexAnimationPlugin<C, T>
+{
     fn build(&self, app: &mut App) {
         app.add_systems(
             PostUpdate,
-            animation_player_spritesheet::<T>
+            animation_player_spritesheet::<C, T>
                 .in_set(Animation)
                 .before(AnimationEventSystemSet),
         );
@@ -199,14 +217,35 @@ impl PlayingAnimation2D {
 }
 
 /// Animation controls
-#[derive(Component, Default, Reflect, Clone)]
+#[derive(Component, Reflect, Clone)]
 #[reflect(Component)]
-pub struct AnimationPlayer2D {
+pub struct AnimationPlayer2D<T: Default = ()> {
     paused: bool,
     pub(crate) animation: PlayingAnimation2D,
+    #[reflect(ignore)]
+    time: PhantomData<T>,
 }
 
-impl AnimationPlayer2D {
+impl Default for AnimationPlayer2D<()> {
+    fn default() -> Self {
+        Self {
+            paused: Default::default(),
+            animation: Default::default(),
+            time: Default::default(),
+        }
+    }
+}
+
+impl<T: Default> AnimationPlayer2D<T> {
+    /// Creates a new AnimationPlayer2D
+    pub fn new() -> Self {
+        Self {
+            paused: Default::default(),
+            animation: Default::default(),
+            time: Default::default(),
+        }
+    }
+
     fn start_from_time(
         &mut self,
         handle: Handle<AnimationClip2D>,

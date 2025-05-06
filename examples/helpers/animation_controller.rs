@@ -1,6 +1,7 @@
 use bevy::{animation::RepeatAnimation, prelude::*};
 use bevy_trickfilm::{animation::AnimationPlayer2D, asset::AnimationClip2D};
 
+#[allow(dead_code)]
 pub fn keyboard_animation_control_helper(
     keyboard_input: &ButtonInput<KeyCode>,
     player: &mut AnimationPlayer2D,

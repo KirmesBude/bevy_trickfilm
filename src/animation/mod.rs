@@ -94,7 +94,7 @@ impl FrameIndexAnimatable for ImageNode {
     }
 }
 
-#[derive(Reflect)]
+#[derive(Reflect, Clone)]
 pub(crate) struct PlayingAnimation2D {
     repeat: RepeatAnimation,
     speed: f32,
@@ -199,7 +199,7 @@ impl PlayingAnimation2D {
 }
 
 /// Animation controls
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Default, Reflect, Clone)]
 #[reflect(Component)]
 pub struct AnimationPlayer2D {
     paused: bool,

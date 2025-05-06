@@ -30,7 +30,7 @@ impl<T: Default> Default for AnimationPlayer2DPlugin<T> {
 }
 
 impl<T: Default> AnimationPlayer2DPlugin<T> {
-    /// TODO: New
+    /// Creates a new AnimationPlayer2DPlugin
     pub fn new() -> Self {
         Self(Default::default())
     }
@@ -112,7 +112,7 @@ impl FrameIndexAnimatable for ImageNode {
     }
 }
 
-#[derive(Reflect)]
+#[derive(Reflect, Clone)]
 pub(crate) struct PlayingAnimation2D {
     repeat: RepeatAnimation,
     speed: f32,
@@ -217,7 +217,7 @@ impl PlayingAnimation2D {
 }
 
 /// Animation controls
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Clone)]
 #[reflect(Component)]
 pub struct AnimationPlayer2D<T: Default = ()> {
     paused: bool,
@@ -237,7 +237,7 @@ impl Default for AnimationPlayer2D<()> {
 }
 
 impl<T: Default> AnimationPlayer2D<T> {
-    /// TODO: new player
+    /// Creates a new AnimationPlayer2D
     pub fn new() -> Self {
         Self {
             paused: Default::default(),

@@ -8,6 +8,7 @@
 | bevy | bevy_trickfilm |
 |------|----------------|
 | main | main           |
+| 0.16 | 0.11.0         |
 | 0.15 | 0.9.1, 0.10.0  |
 | 0.14 | 0.7.0, 0.8.0   |
 | 0.13 | 0.6.0          |
@@ -27,7 +28,7 @@ You can combine this with plugins that add the ability to load a texture atlas f
 
 ```toml, ignore
 # In your Cargo.toml
-bevy_trickfilm = "0.9"
+bevy_trickfilm = "0.11"
 ```
 
 ### animation_clip.trickfilm.ron

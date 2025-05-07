@@ -27,7 +27,7 @@ You can combine this with plugins that add the ability to load a texture atlas f
 
 ```toml, ignore
 # In your Cargo.toml
-bevy_trickfilm = "0.9"
+bevy_trickfilm = "0.10"
 ```
 
 ### animation_clip.trickfilm.ron

@@ -2,7 +2,7 @@
 //!
 
 use bevy::{
-    asset::{io::Reader, AssetLoader, LoadContext},
+    asset::{AssetLoader, LoadContext, io::Reader},
     prelude::{AppTypeRegistry, FromWorld, World},
     reflect::TypeRegistryArc,
 };
@@ -10,7 +10,7 @@ use ron::Deserializer;
 use serde::de::DeserializeSeed;
 use thiserror::Error;
 
-use super::{serde::AnimationClip2DSetDeserializer, AnimationClip2DError, AnimationClip2DSet};
+use super::{AnimationClip2DError, AnimationClip2DSet, serde::AnimationClip2DSetDeserializer};
 
 #[derive(Debug)]
 pub(crate) struct Animation2DLoader {

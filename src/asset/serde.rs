@@ -1,14 +1,14 @@
 use bevy::{
     asset::LoadContext,
+    platform::collections::{HashMap, HashSet},
     reflect::{
-        serde::{ReflectDeserializer, TypeRegistrationDeserializer, TypedReflectDeserializer},
         PartialReflect, TypeRegistry,
+        serde::{ReflectDeserializer, TypeRegistrationDeserializer, TypedReflectDeserializer},
     },
-    utils::{HashMap, HashSet},
 };
 use serde::{
-    de::{DeserializeSeed, Error, Visitor},
     Deserialize, Deserializer,
+    de::{DeserializeSeed, Error, Visitor},
 };
 
 use super::{AnimationClip2D, AnimationClip2DSet, Keyframes};

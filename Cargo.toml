@@ -1,8 +1,8 @@
 [package]
 authors = ["KirmesBude <kirmesbude@gmail.com>"]
 name = "bevy_trickfilm"
-version = "0.10.0"
-edition = "2021"
+version = "0.11.0"
+edition = "2024"
 description = "Bevy plugin for spritesheet manifest loading"
 repository = "https://github.com/KirmesBude/bevy_trickfilm"
 license = "MIT OR Apache-2.0"
@@ -14,16 +14,16 @@ exclude = ["/assets"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy_trickfilm_derive = { path = "derive", version = "0.9" }
-bevy = { version = "0.15", default-features = false, features = ["bevy_asset", "bevy_sprite", "bevy_ui", "bevy_animation"] }
+bevy_trickfilm_derive = { path = "derive", version = "0.10" }
+bevy = { version = "0.16", default-features = false, features = ["bevy_asset", "bevy_sprite", "bevy_ui", "bevy_animation"] }
 serde = { version = "1", features = ["derive"] }
 ron = "0.8"
 thiserror = "1"
 
 [dev-dependencies]
-bevy = { version = "0.15", features = ["file_watcher"] }
+bevy = { version = "0.16", features = ["file_watcher"] }
 bevy_titan = "0.9"
-bevy_asset_loader = { version = "0.22", features = ["2d"] }
+bevy_asset_loader = { version = "0.23.0-rc.3", features = ["2d"] }
 
 [[example]]
 name = "demo"

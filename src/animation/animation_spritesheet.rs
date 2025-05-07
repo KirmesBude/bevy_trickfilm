@@ -1,4 +1,5 @@
 use bevy::{
+    ecs::component::Mutable,
     prelude::{Assets, Component, DetectChanges, Mut, Query, Res},
     time::Time,
 };
@@ -10,7 +11,7 @@ use super::{AnimationPlayer2D, FrameIndexAnimatable, PlayingAnimation2D};
 /// System that will play all spritesheet animations, using any entity with an [`AnimationPlayer2D`]
 /// and a [`Handle<AnimationClip2D>`] as an animation root.
 pub(crate) fn animation_player_spritesheet<
-    C: Component + FrameIndexAnimatable,
+    C: Component<Mutability = Mutable> + FrameIndexAnimatable,
     T: Default + Send + Sync + 'static,
 >(
     time: Res<Time<T>>,

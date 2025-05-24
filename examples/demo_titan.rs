@@ -61,18 +61,16 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 fn keyboard_animation_control(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut animation_player: Query<&mut AnimationPlayer2D>,
+    mut animation_player: Single<&mut AnimationPlayer2D>,
     animations: Res<Animations>,
     mut current_animation: Local<usize>,
     mut instructions_printed: Local<bool>,
 ) {
-    if let Ok(mut player) = animation_player.get_single_mut() {
-        keyboard_animation_control_helper(
-            &keyboard_input,
-            &mut player,
-            &animations.0,
-            &mut current_animation,
-            &mut instructions_printed,
-        );
-    }
+    keyboard_animation_control_helper(
+        &keyboard_input,
+        &mut animation_player,
+        &animations.0,
+        &mut current_animation,
+        &mut instructions_printed,
+    );
 }

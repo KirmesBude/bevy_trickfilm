@@ -9,9 +9,9 @@ use std::ops::Range;
 
 use ::serde::Deserialize;
 use bevy::{
+    platform::collections::HashMap,
     prelude::{App, Asset, AssetApp, Handle, Plugin},
     reflect::{PartialReflect, TypePath},
-    utils::HashMap,
 };
 use thiserror::Error;
 
@@ -75,11 +75,7 @@ impl Keyframes {
             Keyframes::KeyframesVec(vec) => vec.get(index).copied(),
             Keyframes::KeyframesRange(range) => {
                 let value = range.start + index;
-                if value < range.end {
-                    Some(value)
-                } else {
-                    None
-                }
+                if value < range.end { Some(value) } else { None }
             }
         }
     }

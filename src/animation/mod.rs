@@ -10,7 +10,8 @@ use crate::prelude::AnimationClip2D;
 use bevy::{
     animation::RepeatAnimation,
     app::{Animation, PostUpdate},
-    prelude::{App, Component, Handle, ImageNode, IntoSystemConfigs, Plugin, ReflectComponent},
+    ecs::{component::Mutable, schedule::IntoScheduleConfigs},
+    prelude::{App, Component, Handle, ImageNode, Plugin, ReflectComponent},
     reflect::{Reflect, TypePath},
     sprite::Sprite,
 };
@@ -61,8 +62,8 @@ impl<C: FrameIndexAnimatable + Component, T: Default> Default for FrameIndexAnim
     }
 }
 
-impl<C: FrameIndexAnimatable + Component, T: Default + Send + Sync + 'static> Plugin
-    for FrameIndexAnimationPlugin<C, T>
+impl<C: FrameIndexAnimatable + Component<Mutability = Mutable>, T: Default + Send + Sync + 'static>
+    Plugin for FrameIndexAnimationPlugin<C, T>
 {
     fn build(&self, app: &mut App) {
         app.add_systems(

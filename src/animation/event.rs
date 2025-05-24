@@ -1,7 +1,9 @@
 //! This module implements everything necessary to support arbitrary events.
 //!
 
-use bevy::{app::Animation, prelude::*, reflect::GetTypeRegistration, utils::HashMap};
+use bevy::{
+    app::Animation, platform::collections::HashMap, prelude::*, reflect::GetTypeRegistration,
+};
 
 use crate::asset::AnimationClip2D;
 
@@ -115,7 +117,7 @@ fn send_animation_event<T: AnimationEvent>(
     let entity_event_map = collect_events::<T>(animation_players, &cache);
 
     for (_, events) in entity_event_map {
-        event_writer.send_batch(events);
+        event_writer.write_batch(events);
     }
 }
 

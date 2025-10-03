@@ -9,13 +9,13 @@ use std::marker::PhantomData;
 use crate::prelude::AnimationClip2D;
 use bevy::{
     animation::RepeatAnimation,
-    app::{Animation, PostUpdate},
+    app::{AnimationSystems, PostUpdate},
     ecs::{component::Mutable, schedule::IntoScheduleConfigs},
     prelude::{App, Component, Handle, ImageNode, Plugin, ReflectComponent},
     reflect::{Reflect, TypePath},
     sprite::Sprite,
 };
-use event::{AnimationEventSystemSet, EventTarget};
+use event::{AnimationEventSystems, EventTarget};
 
 use self::animation_spritesheet::animation_player_spritesheet;
 
@@ -69,8 +69,8 @@ impl<C: FrameIndexAnimatable + Component<Mutability = Mutable>, T: Default + Sen
         app.add_systems(
             PostUpdate,
             animation_player_spritesheet::<C, T>
-                .in_set(Animation)
-                .before(AnimationEventSystemSet),
+                .in_set(AnimationSystems)
+                .before(AnimationEventSystems),
         );
     }
 }

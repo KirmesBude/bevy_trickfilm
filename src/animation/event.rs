@@ -2,7 +2,7 @@
 //!
 
 use bevy::{
-    app::Animation, platform::collections::HashMap, prelude::*, reflect::GetTypeRegistration,
+    app::AnimationSystems, platform::collections::HashMap, prelude::*, reflect::GetTypeRegistration,
 };
 
 use crate::asset::AnimationClip2D;
@@ -11,17 +11,17 @@ use super::AnimationPlayer2D;
 
 /// SystemSet to order animation playing and animation events
 #[derive(Debug, Default, Hash, PartialEq, Eq, Clone, SystemSet)]
-pub(crate) struct AnimationEventSystemSet;
+pub(crate) struct AnimationEventSystems;
+
+/// Deprecated alias for [`AnimationEventSystemSet`].
+#[deprecated(since = "0.12.0", note = "Renamed to `AnimationEventSystems`.")]
+pub type AnimationEventSystemSet = AnimationEventSystems;
 
 /// AnimationEvents are triggered by the animation system if registered as such with the App
-pub trait AnimationEvent: Event + GetTypeRegistration + FromReflect + Clone {
-    /// Implement this to be able to set the entity for a targeted event.
-    /// Default implementation is a No-Op.
-    fn set_target(&mut self, target: EventTarget) {
-        let _ = target;
-        /* Default implementation is empty for non-targeted events */
-    }
-}
+pub trait AnimationEvent: EntityEvent + GetTypeRegistration + FromReflect {}
+
+/// AnimationMessages are written by the animation system if registered as such with the App
+pub trait AnimationMessage: Message + GetTypeRegistration + FromReflect + Clone {}
 
 /// Wrapper around entity to be used for EventTargets
 #[derive(Debug, Clone, Copy, Deref, Reflect)]
@@ -46,7 +46,7 @@ impl<T> Default for AnimationEventCache<T> {
 // That way when processing animation for event sending, we already have a vector of T instead of Box<dyn Reflect>, so we only iterate through the events that are actually relevant (can be from_reflected to T)
 fn update_animation_event_cache<T: FromReflect>(
     mut cache: ResMut<AnimationEventCache<T>>,
-    mut asset_events: EventReader<AssetEvent<AnimationClip2D>>,
+    mut asset_events: MessageReader<AssetEvent<AnimationClip2D>>,
     animation_clips: Res<Assets<AnimationClip2D>>,
 ) {
     for asset_event in asset_events.read() {
@@ -108,16 +108,29 @@ fn collect_events<T: AnimationEvent>(
         .collect()
 }
 
-// Batch send events
-fn send_animation_event<T: AnimationEvent>(
-    mut event_writer: EventWriter<T>,
-    animation_players: Query<(Entity, &AnimationPlayer2D)>,
+// Batch write messages
+fn write_animation_message<T: AnimationMessage>(
+    mut event_writer: MessageWriter<T>,
+    animation_players: Query<&AnimationPlayer2D>,
     cache: Res<AnimationEventCache<T>>,
 ) {
-    let entity_event_map = collect_events::<T>(animation_players, &cache);
+    let messages_collection: Vec<_> = animation_players
+        .iter()
+        .map(|animation_player| {
+            let mut events: Vec<T> = Vec::with_capacity(0);
+            if let Some(event_map) = cache.0.get(&animation_player.animation_clip().id()) {
+                if animation_player.animation.last_frame != animation_player.animation.frame {
+                    if let Some(animation_events) = event_map.get(&animation_player.frame()) {
+                        events = animation_events.clone();
+                    }
+                }
+            }
+            events
+        })
+        .collect();
 
-    for (_, events) in entity_event_map {
-        event_writer.write_batch(events);
+    for messages in messages_collection {
+        event_writer.write_batch(messages);
     }
 }
 
@@ -131,7 +144,7 @@ fn trigger_animation_event<T: AnimationEvent>(
 
     for (entity, events) in entity_event_map {
         for event in events {
-            commands.trigger_targets(event, entity);
+            commands.trigger(event);
         }
     }
 }
@@ -139,7 +152,7 @@ fn trigger_animation_event<T: AnimationEvent>(
 /// App extension trait to add animation_events/animation_triggers, which will schedule these sending/triggering systems for the specific type
 pub trait AnimationEventAppExtension {
     /// Add event as buffered event.
-    fn add_animation_event<T: AnimationEvent>(&mut self) -> &mut Self;
+    fn add_animation_message<T: AnimationMessage>(&mut self) -> &mut Self;
 
     /// Add event as observer.
     fn add_animation_trigger<T: AnimationEvent>(&mut self) -> &mut Self;
@@ -156,8 +169,8 @@ fn add_animation_cache<T: AnimationEvent>(app: &mut App) {
         app.add_systems(
             PostUpdate,
             update_animation_event_cache::<T>
-                .in_set(Animation)
-                .in_set(AnimationEventSystemSet),
+                .in_set(AnimationSystems)
+                .in_set(AnimationEventSystems),
         );
     }
 
@@ -165,15 +178,15 @@ fn add_animation_cache<T: AnimationEvent>(app: &mut App) {
 }
 
 impl AnimationEventAppExtension for App {
-    fn add_animation_event<T: AnimationEvent>(&mut self) -> &mut Self {
+    fn add_animation_message<T: AnimationMessage>(&mut self) -> &mut Self {
         add_animation_cache::<T>(self);
 
-        self.add_event::<T>();
+        self.add_message::<T>();
         self.add_systems(
             PostUpdate,
-            send_animation_event::<T>
-                .in_set(Animation)
-                .in_set(AnimationEventSystemSet)
+            write_animation_message::<T>
+                .in_set(AnimationSystems)
+                .in_set(AnimationEventSystems)
                 .after(update_animation_event_cache::<T>),
         )
     }
@@ -185,8 +198,8 @@ impl AnimationEventAppExtension for App {
         self.add_systems(
             PostUpdate,
             trigger_animation_event::<T>
-                .in_set(Animation)
-                .in_set(AnimationEventSystemSet)
+                .in_set(AnimationSystems)
+                .in_set(AnimationEventSystems)
                 .after(update_animation_event_cache::<T>),
         )
     }

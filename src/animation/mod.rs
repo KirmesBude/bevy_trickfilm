@@ -19,7 +19,10 @@ use event::AnimationEventSystems;
 
 use self::animation_spritesheet::animation_player_spritesheet;
 
-pub use event::{AnimationEvent, AnimationEventAppExtension};
+pub use event::{
+    AnimationEntityEvent, AnimationEntityEventAppExtension, AnimationEvent,
+    AnimationEventAppExtension, AnimationMessage, AnimationMessageAppExtension,
+};
 
 /// Adds support for spritesheet animation playing.
 pub struct AnimationPlayer2DPlugin<T: Default = ()>(PhantomData<T>);

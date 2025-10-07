@@ -83,18 +83,16 @@ fn collect_events<T: AnimationEvent>(
 ) -> Vec<T> {
     animation_players
         .iter()
-        .map(|animation_player| {
+        .flat_map(|animation_player| {
             let mut events: Vec<T> = Vec::with_capacity(0);
-            if let Some(event_map) = cache.0.get(&animation_player.animation_clip().id()) {
-                if animation_player.animation.last_frame != animation_player.animation.frame {
-                    if let Some(animation_events) = event_map.get(&animation_player.frame()) {
-                        events = animation_events.clone();
-                    }
-                }
+            if let Some(event_map) = cache.0.get(&animation_player.animation_clip().id())
+                && animation_player.animation.last_frame != animation_player.animation.frame
+                && let Some(animation_events) = event_map.get(&animation_player.frame())
+            {
+                events = animation_events.clone();
             }
             events
         })
-        .flatten()
         .collect()
 }
 
@@ -106,19 +104,17 @@ fn collect_entity_events<T: AnimationEntityEvent>(
 ) -> Vec<T> {
     animation_players
         .iter()
-        .map(|(entity, animation_player)| {
+        .flat_map(|(entity, animation_player)| {
             let mut events: Vec<T> = Vec::with_capacity(0);
-            if let Some(event_map) = cache.0.get(&animation_player.animation_clip().id()) {
-                if animation_player.animation.last_frame != animation_player.animation.frame {
-                    if let Some(animation_events) = event_map.get(&animation_player.frame()) {
-                        events = animation_events.clone();
-                        events.iter_mut().for_each(|event| event.set_entity(entity));
-                    }
-                }
+            if let Some(event_map) = cache.0.get(&animation_player.animation_clip().id())
+                && animation_player.animation.last_frame != animation_player.animation.frame
+                && let Some(animation_events) = event_map.get(&animation_player.frame())
+            {
+                events = animation_events.clone();
+                events.iter_mut().for_each(|event| event.set_entity(entity));
             }
             events
         })
-        .flatten()
         .collect()
 }
 
@@ -129,18 +125,16 @@ fn collect_messages<T: AnimationMessage>(
 ) -> Vec<T> {
     animation_players
         .iter()
-        .map(|animation_player| {
+        .flat_map(|animation_player| {
             let mut events: Vec<T> = Vec::with_capacity(0);
-            if let Some(event_map) = cache.0.get(&animation_player.animation_clip().id()) {
-                if animation_player.animation.last_frame != animation_player.animation.frame {
-                    if let Some(animation_events) = event_map.get(&animation_player.frame()) {
-                        events = animation_events.clone();
-                    }
-                }
+            if let Some(event_map) = cache.0.get(&animation_player.animation_clip().id())
+                && animation_player.animation.last_frame != animation_player.animation.frame
+                && let Some(animation_events) = event_map.get(&animation_player.frame())
+            {
+                events = animation_events.clone();
             }
             events
         })
-        .flatten()
         .collect()
 }
 

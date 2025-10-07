@@ -24,16 +24,9 @@ fn main() {
         .run();
 }
 
-fn test() -> Entity {
-    Entity::PLACEHOLDER
-}
-
 // This Event needs to implement AnimationEvent
 #[derive(Debug, Clone, Message, Reflect)]
 struct SampleMessage {
-    #[reflect(skip_serializing, default = "test")]
-    // This is necessary, because entity is not given via the trickfilm file, but at runtime via the AnimationEvent trait
-    entity: Entity,
     msg: String,
 }
 

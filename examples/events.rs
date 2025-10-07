@@ -31,7 +31,7 @@ struct SampleEvent {
     #[reflect(skip_serializing)]
     // This is necessary, because EventTarget is not given via the trickfilm file, but at runtime via the AnimationEvent trait
     #[animationevent(target)]
-    target: EventTarget,
+    target: Entity,
     msg: String,
 }
 

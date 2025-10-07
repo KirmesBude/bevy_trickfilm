@@ -15,7 +15,7 @@ use bevy::{
     reflect::{Reflect, TypePath},
     sprite::Sprite,
 };
-use event::{AnimationEventSystems, EventTarget};
+use event::AnimationEventSystems;
 
 use self::animation_spritesheet::animation_player_spritesheet;
 
@@ -40,8 +40,7 @@ impl<T: Default> AnimationPlayer2DPlugin<T> {
 impl<T: Default + Send + Sync + 'static + TypePath> Plugin for AnimationPlayer2DPlugin<T> {
     fn build(&self, app: &mut App) {
         app.register_type::<AnimationPlayer2D<T>>()
-            .register_type::<PlayingAnimation2D>()
-            .register_type::<EventTarget>();
+            .register_type::<PlayingAnimation2D>();
         app.add_plugins((
             FrameIndexAnimationPlugin::<Sprite, T>::default(),
             FrameIndexAnimationPlugin::<ImageNode, T>::default(),

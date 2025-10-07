@@ -11,6 +11,7 @@
 | keyframes           | [Keyframes] | mandatory | Keyframes of this animation clip corresponding to the indices in the texture atlas. |
 | keyframe_timestamps | Option of Vector of f32   | optional  | Timestamp of the corresponding keyframe of this animation clip in seconds. Default value is None, but will be calculated so all keyframes are equally distributed along the entire duration. |
 | duration            | f32                       | mandatory | Duration of this animation clip in seconds. Must be greater than the maximum keyframe timestamp. |
+| events              | Any | optional | TypePath to a type that implements either AnimationMessage, AnimationEvent or AnimationEntityEvent |
 
 ## Keyframes
 | Variant        | Description |

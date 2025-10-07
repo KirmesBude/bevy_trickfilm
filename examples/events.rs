@@ -8,15 +8,15 @@ mod animation_helper;
 
 use animation_helper::keyboard_animation_control_helper;
 use bevy::prelude::*;
-use bevy_trickfilm::{animation::event::EventTarget, prelude::*};
-use bevy_trickfilm_derive::AnimationEvent;
+use bevy_trickfilm::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest())) // prevents blurry sprites
         .add_plugins(Animation2DPlugin)
         // add_animation_event will add the event to the app, register the type and setup trickfilm internal resources and systems
-        .add_animation_event::<SampleEvent>()
+        .add_animation_message::<SampleMessage>()
+        .register_type::<SampleMessage>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -26,14 +26,12 @@ fn main() {
 }
 
 // This Event needs to implement AnimationEvent
-#[derive(Debug, Clone, Event, Reflect, AnimationEvent)]
-struct SampleEvent {
-    #[reflect(skip_serializing)]
-    // This is necessary, because EventTarget is not given via the trickfilm file, but at runtime via the AnimationEvent trait
-    #[animationevent(target)]
-    target: EventTarget,
+#[derive(Debug, Clone, Message, Reflect)]
+struct SampleMessage {
     msg: String,
 }
+
+impl AnimationMessage for SampleMessage {}
 
 #[derive(Resource)]
 struct Animations(Vec<Handle<AnimationClip2D>>);
@@ -65,7 +63,7 @@ fn setup(
 
     // Prepare AnimationPlayer
     let mut animation_player = AnimationPlayer2D::default();
-    animation_player.play(animations[0].clone_weak()).repeat();
+    animation_player.play(animations[0].clone()).repeat();
 
     // Insert a resource with the current animation information
     commands.insert_resource(Animations(animations));
@@ -105,7 +103,7 @@ fn update_frame_text(
 }
 
 // You can easily react on your custom event just like a normal bevy event
-fn print_event(mut event_reader: EventReader<SampleEvent>) {
+fn print_event(mut event_reader: MessageReader<SampleMessage>) {
     for event in event_reader.read() {
         println!("{:?}", event);
     }

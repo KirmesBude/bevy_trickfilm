@@ -22,7 +22,10 @@ impl Plugin for Animation2DPlugin {
 /// `use bevy_trickfilm::prelude::*;` to import common components and plugins.
 pub mod prelude {
     pub use crate::Animation2DPlugin;
-    pub use crate::animation::{AnimationEvent, AnimationEventAppExtension};
+    pub use crate::animation::{
+        AnimationEntityEvent, AnimationEntityEventAppExtension, AnimationEvent,
+        AnimationEventAppExtension, AnimationMessage, AnimationMessageAppExtension,
+    };
     pub use crate::animation::{AnimationPlayer2D, AnimationPlayer2DPlugin};
     pub use crate::asset::{Animation2DLoaderPlugin, AnimationClip2D, AnimationClip2DSet};
     pub use bevy_trickfilm_derive::*;

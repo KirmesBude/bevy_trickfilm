@@ -57,9 +57,7 @@ pub fn keyboard_animation_control_helper(
 
     if keyboard_input.just_pressed(KeyCode::Enter) {
         *current_animation = (*current_animation + 1) % animations.len();
-        player
-            .play(animations[*current_animation].clone_weak())
-            .repeat();
+        player.play(animations[*current_animation].clone()).repeat();
     }
 
     if keyboard_input.just_pressed(KeyCode::Digit1) {

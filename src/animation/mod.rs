@@ -9,17 +9,20 @@ use std::marker::PhantomData;
 use crate::prelude::AnimationClip2D;
 use bevy::{
     animation::RepeatAnimation,
-    app::{Animation, PostUpdate},
+    app::{AnimationSystems, PostUpdate},
     ecs::{component::Mutable, schedule::IntoScheduleConfigs},
     prelude::{App, Component, Handle, ImageNode, Plugin, ReflectComponent},
     reflect::{Reflect, TypePath},
     sprite::Sprite,
 };
-use event::{AnimationEventSystemSet, EventTarget};
+use event::AnimationEventSystems;
 
 use self::animation_spritesheet::animation_player_spritesheet;
 
-pub use event::{AnimationEvent, AnimationEventAppExtension};
+pub use event::{
+    AnimationEntityEvent, AnimationEntityEventAppExtension, AnimationEvent,
+    AnimationEventAppExtension, AnimationMessage, AnimationMessageAppExtension,
+};
 
 /// Adds support for spritesheet animation playing.
 pub struct AnimationPlayer2DPlugin<T: Default = ()>(PhantomData<T>);
@@ -40,8 +43,7 @@ impl<T: Default> AnimationPlayer2DPlugin<T> {
 impl<T: Default + Send + Sync + 'static + TypePath> Plugin for AnimationPlayer2DPlugin<T> {
     fn build(&self, app: &mut App) {
         app.register_type::<AnimationPlayer2D<T>>()
-            .register_type::<PlayingAnimation2D>()
-            .register_type::<EventTarget>();
+            .register_type::<PlayingAnimation2D>();
         app.add_plugins((
             FrameIndexAnimationPlugin::<Sprite, T>::default(),
             FrameIndexAnimationPlugin::<ImageNode, T>::default(),
@@ -69,8 +71,8 @@ impl<C: FrameIndexAnimatable + Component<Mutability = Mutable>, T: Default + Sen
         app.add_systems(
             PostUpdate,
             animation_player_spritesheet::<C, T>
-                .in_set(Animation)
-                .before(AnimationEventSystemSet),
+                .in_set(AnimationSystems)
+                .before(AnimationEventSystems),
         );
     }
 }

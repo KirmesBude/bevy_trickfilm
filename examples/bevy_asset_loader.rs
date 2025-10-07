@@ -52,7 +52,7 @@ fn setup(mut commands: Commands, my_assets: Res<MyAssets>) {
     // Prepare AnimationPlayer
     let mut animation_player = AnimationPlayer2D::default();
     animation_player
-        .play(my_assets.animations[0].clone_weak())
+        .play(my_assets.animations[0].clone())
         .repeat();
 
     // SpriteSheet entity

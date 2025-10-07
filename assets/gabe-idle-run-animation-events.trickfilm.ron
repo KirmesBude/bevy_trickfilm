@@ -9,17 +9,17 @@
         duration: 0.6, /* Must be greater than max(keyframe_timestamps), if provided */
         events: {
             0: {
-                "events::SampleEvent": (
+                "events::SampleMessage": (
                     msg: "start",
                 )
             },
             3: {
-                "events::SampleEvent": (
+                "events::SampleMessage": (
                     msg: "middle",
                 )
             },
             5: {
-                "events::SampleEvent": (
+                "events::SampleMessage": (
                     msg: "end",
                 )
             },

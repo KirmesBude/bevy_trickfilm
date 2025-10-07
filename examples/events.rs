@@ -16,6 +16,7 @@ fn main() {
         .add_plugins(Animation2DPlugin)
         // add_animation_event will add the event to the app, register the type and setup trickfilm internal resources and systems
         .add_animation_message::<SampleMessage>()
+        .register_type::<SampleMessage>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,

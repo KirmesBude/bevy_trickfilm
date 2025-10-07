@@ -13,15 +13,13 @@ use super::AnimationPlayer2D;
 #[derive(Debug, Default, Hash, PartialEq, Eq, Clone, SystemSet)]
 pub(crate) struct AnimationEventSystems;
 
-/// Deprecated alias for [`AnimationEventSystemSet`].
-#[deprecated(since = "0.12.0", note = "Renamed to `AnimationEventSystems`.")]
-pub type AnimationEventSystemSet = AnimationEventSystems;
-
 /// AnimationEvents are triggered by the animation system if registered as such with the App
 pub trait AnimationEvent: Event + GetTypeRegistration + FromReflect + Clone {}
 
 /// AnimationEntityEvents are triggered by the animation system if registered as such with the App
 pub trait AnimationEntityEvent: EntityEvent + GetTypeRegistration + FromReflect + Clone {
+    /// Implement this to be able to set the entity for a targeted event.
+    /// Default implementation is a No-Op.
     fn set_entity(&mut self, entity: Entity);
 }
 
@@ -147,11 +145,13 @@ fn collect_messages<T: AnimationMessage>(
 }
 
 // Trigger events
-fn trigger_animation_event<T: AnimationEvent>(
+fn trigger_animation_event<'a, T: AnimationEvent>(
     mut commands: Commands,
     animation_players: Query<&AnimationPlayer2D>,
     cache: Res<AnimationEventCache<T>>,
-) {
+) where
+    <T as bevy::prelude::Event>::Trigger<'a>: Default,
+{
     let events = collect_events::<T>(animation_players, &cache);
 
     for event in events {
@@ -160,11 +160,13 @@ fn trigger_animation_event<T: AnimationEvent>(
 }
 
 // Trigger entity events
-fn trigger_animation_entity_event<T: AnimationEntityEvent>(
+fn trigger_animation_entity_event<'a, T: AnimationEntityEvent>(
     mut commands: Commands,
     animation_players: Query<(Entity, &AnimationPlayer2D)>,
     cache: Res<AnimationEventCache<T>>,
-) {
+) where
+    <T as bevy::prelude::Event>::Trigger<'a>: Default,
+{
     let events = collect_entity_events::<T>(animation_players, &cache);
 
     for event in events {
@@ -184,13 +186,18 @@ fn write_animation_message<T: AnimationMessage>(
 }
 
 /// App extension trait to add AnimationEvents, which will schedule the triggering systems for the specific type
-pub trait AnimationEventAppExtension {
+pub trait AnimationEventAppExtension<'a> {
     /// Add event
-    fn add_animation_event<T: AnimationEvent>(&mut self) -> &mut Self;
+    fn add_animation_event<T: AnimationEvent>(&mut self) -> &mut Self
+    where
+        <T as bevy::prelude::Event>::Trigger<'a>: Default;
 }
 
-impl AnimationEventAppExtension for App {
-    fn add_animation_event<T: AnimationEvent>(&mut self) -> &mut Self {
+impl<'a> AnimationEventAppExtension<'a> for App {
+    fn add_animation_event<T: AnimationEvent>(&mut self) -> &mut Self
+    where
+        <T as bevy::prelude::Event>::Trigger<'a>: Default,
+    {
         add_animation_cache::<T>(self);
 
         // add_event is not necessary for observers
@@ -205,15 +212,21 @@ impl AnimationEventAppExtension for App {
 }
 
 /// App extension trait to add AnimationEntityEvents, which will schedule the triggering systems for the specific type
-pub trait AnimationEntityEventAppExtension {
+pub trait AnimationEntityEventAppExtension<'a> {
     /// Add event
-    fn add_animation_entity_event<T: AnimationEntityEvent>(&mut self) -> &mut Self;
+    fn add_animation_entity_event<T: AnimationEntityEvent>(&mut self) -> &mut Self
+    where
+        <T as bevy::prelude::Event>::Trigger<'a>: Default;
 }
 
-impl AnimationEntityEventAppExtension for App {
-    fn add_animation_entity_event<T: AnimationEntityEvent>(&mut self) -> &mut Self {
+impl<'a> AnimationEntityEventAppExtension<'a> for App {
+    fn add_animation_entity_event<T: AnimationEntityEvent>(&mut self) -> &mut Self
+    where
+        <T as bevy::prelude::Event>::Trigger<'a>: Default,
+    {
         add_animation_cache::<T>(self);
 
+        // add_event is not necessary for observers
         self.add_systems(
             PostUpdate,
             trigger_animation_entity_event::<T>

@@ -53,7 +53,7 @@ fn setup(
 
     // Prepare AnimationPlayer
     let mut animation_player = AnimationPlayer2D::default();
-    animation_player.play(animations[0].clone_weak()).repeat();
+    animation_player.play(animations[0].clone()).repeat();
 
     // Insert a resource with the current animation information
     commands.insert_resource(Animations(animations));

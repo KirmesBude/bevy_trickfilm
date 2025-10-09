@@ -2,7 +2,7 @@
 //!
 
 use bevy::{
-    app::AnimationSystems, platform::collections::HashMap, prelude::*, reflect::GetTypeRegistration,
+    app::AnimationSystems, ecs::event::GlobalTrigger, platform::collections::HashMap, prelude::*, reflect::GetTypeRegistration
 };
 
 use crate::asset::AnimationClip2D;
@@ -269,4 +269,22 @@ fn add_animation_cache<T: Send + Sync + GetTypeRegistration + FromReflect>(app: 
     }
 
     app.register_type::<T>();
+}
+
+pub trait AnimationEventPayload: Send + Sync + 'static + GetTypeRegistration + FromReflect {}
+
+pub struct AnimationEntityEvent2<P: AnimationEventPayload> {
+    entity: Entity,
+    payload: P,
+}
+
+impl<P: AnimationEventPayload> Event for AnimationEntityEvent2<P> {
+    type Trigger<'a> = GlobalTrigger;
+}
+
+#[derive(Debug, Reflect)]
+pub struct TestEventPayload;
+
+impl AnimationEventPayload for TestEventPayload {
+
 }

@@ -1,6 +1,9 @@
 //! This module implements everything necessary to support arbitrary events.
 //!
 
+use std::fmt::Debug;
+use std::marker::PhantomData;
+
 use bevy::{
     app::AnimationSystems,
     ecs::event::Trigger,
@@ -69,12 +72,15 @@ fn update_animation_event_payload_cache<T: AnimationEventPayload>(
     }
 }
 
-// Collect events with payload
-fn collect_events<P: AnimationEventPayload>(
+// Trigger events
+fn trigger_animation_event<P: AnimationEventPayload, T: AnimationEventTrigger<P>>(
+    mut commands: Commands,
     animation_players: Query<(Entity, &AnimationPlayer2D)>,
-    cache: &AnimationEventPayloadCache<P>,
-) -> Vec<AnimationEvent<P>> {
-    animation_players
+    cache: Res<AnimationEventPayloadCache<P>>,
+) where
+    <T as AnimationEventTrigger<P>>::Trigger: std::default::Default,
+{
+    let events: Vec<AnimationEvent<P>> = animation_players
         .iter()
         .flat_map(|(entity, animation_player)| {
             let mut events: Vec<AnimationEvent<P>> = Vec::with_capacity(0);
@@ -87,23 +93,13 @@ fn collect_events<P: AnimationEventPayload>(
                     .map(|payload| AnimationEvent {
                         entity,
                         payload: payload.clone(),
+                        trigger: PhantomData,
                     })
                     .collect();
             }
             events
         })
-        .collect()
-}
-
-// Trigger events
-fn trigger_animation_event<P: AnimationEventPayload>(
-    mut commands: Commands,
-    animation_players: Query<(Entity, &AnimationPlayer2D)>,
-    cache: Res<AnimationEventPayloadCache<P>>,
-) where
-    <P as AnimationEventPayload>::Trigger: std::default::Default,
-{
-    let events = collect_events::<P>(animation_players, &cache);
+        .collect();
 
     for event in events {
         commands.trigger(event);
@@ -112,11 +108,29 @@ fn trigger_animation_event<P: AnimationEventPayload>(
 
 // Batch write messages
 fn write_animation_message<P: AnimationEventPayload>(
-    mut event_writer: MessageWriter<AnimationEvent<P>>,
+    mut event_writer: MessageWriter<AnimationMessage<P>>,
     animation_players: Query<(Entity, &AnimationPlayer2D)>,
     cache: Res<AnimationEventPayloadCache<P>>,
 ) {
-    let messages = collect_events::<P>(animation_players, &cache);
+    let messages: Vec<AnimationMessage<P>> = animation_players
+        .iter()
+        .flat_map(|(entity, animation_player)| {
+            let mut events: Vec<AnimationMessage<P>> = Vec::with_capacity(0);
+            if let Some(payload_map) = cache.0.get(&animation_player.animation_clip().id())
+                && animation_player.animation.last_frame != animation_player.animation.frame
+                && let Some(animation_payloads) = payload_map.get(&animation_player.frame())
+            {
+                events = animation_payloads
+                    .iter()
+                    .map(|payload| AnimationMessage {
+                        entity,
+                        payload: payload.clone(),
+                    })
+                    .collect();
+            }
+            events
+        })
+        .collect();
 
     event_writer.write_batch(messages);
 }
@@ -124,22 +138,37 @@ fn write_animation_message<P: AnimationEventPayload>(
 /// App extension trait to add AnimationEvents, which will schedule the triggering systems for the specific type
 pub trait AnimationEventAppExtension {
     /// Add event
-    fn add_animation_event<P: AnimationEventPayload>(&mut self) -> &mut Self
+    fn add_animation_event<P: AnimationEventPayload>(&mut self) -> &mut Self;
+
+    /// Add event
+    fn add_animation_event_with_trigger<P: AnimationEventPayload, T: AnimationEventTrigger<P>>(
+        &mut self,
+    ) -> &mut Self
     where
-        <P as AnimationEventPayload>::Trigger: std::default::Default;
+        <T as AnimationEventTrigger<P>>::Trigger: std::default::Default;
 }
 
 impl AnimationEventAppExtension for App {
-    fn add_animation_event<P: AnimationEventPayload>(&mut self) -> &mut Self
+    fn add_animation_event<P: AnimationEventPayload>(&mut self) -> &mut Self {
+        self.add_animation_event_with_trigger::<P, DefaultAnimationEventTrigger>()
+    }
+
+    fn add_animation_event_with_trigger<P: AnimationEventPayload, T: AnimationEventTrigger<P>>(
+        &mut self,
+    ) -> &mut Self
     where
-        <P as AnimationEventPayload>::Trigger: std::default::Default,
+        <T as AnimationEventTrigger<P>>::Trigger: std::default::Default,
     {
         add_animation_event_payload_cache::<P>(self);
 
+        self.register_type::<P>();
+        self.register_type::<AnimationEvent<P, T>>();
+
         // add_event is not necessary for observers
+        // TODO: Maybe putting this here defeats the purpose, but how to get it as close as possible to the actual animation?
         self.add_systems(
             PostUpdate,
-            trigger_animation_event::<P>
+            trigger_animation_event::<P, T>
                 .in_set(AnimationSystems)
                 .in_set(AnimationEventSystems)
                 .after(update_animation_event_payload_cache::<P>),
@@ -157,7 +186,10 @@ impl AnimationMessageAppExtension for App {
     fn add_animation_message<P: AnimationEventPayload>(&mut self) -> &mut Self {
         add_animation_event_payload_cache::<P>(self);
 
-        self.add_message::<AnimationEvent<P>>();
+        self.register_type::<P>();
+        self.register_type::<AnimationMessage<P>>();
+
+        self.add_message::<AnimationMessage<P>>();
         self.add_systems(
             PostUpdate,
             write_animation_message::<P>
@@ -183,31 +215,44 @@ fn add_animation_event_payload_cache<P: AnimationEventPayload>(app: &mut App) {
                 .in_set(AnimationEventSystems),
         );
     }
+}
 
-    app.register_type::<P>();
-    app.register_type::<AnimationEvent<P>>();
+/// TODO Trigger
+pub trait AnimationEventTrigger<P: AnimationEventPayload>: Sized + 'static + TypePath {
+    /// Trigger that is passed to AnimationEvent.
+    type Trigger: Trigger<AnimationEvent<P, Self>>;
+}
+
+/// TODO DefaultTrigger
+#[derive(Debug, Default, Copy, Clone, Reflect)]
+pub struct DefaultAnimationEventTrigger;
+
+impl<P: AnimationEventPayload> AnimationEventTrigger<P> for DefaultAnimationEventTrigger {
+    type Trigger = bevy::ecs::event::GlobalTrigger;
 }
 
 /// TODO: Payloads
-pub trait AnimationEventPayload: GetTypeRegistration + FromReflect + Typed + Clone {
-    /// Trigger that is passed to AnimationEvent.
-    type Trigger: Trigger<AnimationEvent<Self>>;
-}
+pub trait AnimationEventPayload: GetTypeRegistration + FromReflect + Typed + Clone {}
 
-/// AnimationEvent typed by your AnimationEventPayload
-#[derive(Debug, Reflect)]
-pub struct AnimationEvent<P: AnimationEventPayload> {
+/// AnimationEvent typed by your payload
+#[derive(Clone, Reflect)]
+pub struct AnimationEvent<
+    P: AnimationEventPayload,
+    T: AnimationEventTrigger<P> = DefaultAnimationEventTrigger,
+> {
     /// Entity that has the AnimationPlayer2D
     pub entity: Entity,
     /// Payload with your arbitrary data
     pub payload: P,
+    #[reflect(ignore)]
+    trigger: PhantomData<fn() -> T>,
 }
 
-impl<P: AnimationEventPayload> Event for AnimationEvent<P> {
-    type Trigger<'a> = P::Trigger;
+impl<P: AnimationEventPayload, T: AnimationEventTrigger<P>> Event for AnimationEvent<P, T> {
+    type Trigger<'a> = T::Trigger;
 }
 
-impl<P: AnimationEventPayload> EntityEvent for AnimationEvent<P> {
+impl<P: AnimationEventPayload, T: AnimationEventTrigger<P>> EntityEvent for AnimationEvent<P, T> {
     fn event_target(&self) -> Entity {
         self.entity
     }
@@ -217,4 +262,22 @@ impl<P: AnimationEventPayload> EntityEvent for AnimationEvent<P> {
     }
 }
 
-impl<P: AnimationEventPayload> Message for AnimationEvent<P> {}
+impl<P: AnimationEventPayload + Debug, T: AnimationEventTrigger<P>> Debug for AnimationEvent<P, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AnimationEvent")
+            .field("entity", &self.entity)
+            .field("payload", &self.payload)
+            .finish()
+    }
+}
+
+/// AnimationMessage typed by your payload
+#[derive(Debug, Reflect)]
+pub struct AnimationMessage<P: AnimationEventPayload> {
+    /// Entity that has the AnimationPlayer2D
+    pub entity: Entity,
+    /// Payload with your arbitrary data
+    pub payload: P,
+}
+
+impl<P: AnimationEventPayload> Message for AnimationMessage<P> {}

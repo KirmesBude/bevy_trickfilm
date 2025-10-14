@@ -7,8 +7,11 @@
 mod animation_helper;
 
 use animation_helper::keyboard_animation_control_helper;
-use bevy::{ecs::event::GlobalTrigger, prelude::*};
-use bevy_trickfilm::{animation::event::AnimationEventPayload, prelude::*};
+use bevy::prelude::*;
+use bevy_trickfilm::{
+    animation::event::{AnimationEventPayload, AnimationEventTrigger, AnimationMessage},
+    prelude::*,
+};
 
 fn main() {
     App::new()
@@ -16,24 +19,46 @@ fn main() {
         .add_plugins(Animation2DPlugin)
         // add_animation_event will add the event to the app, register the type and setup trickfilm internal resources and systems
         .add_animation_message::<SamplePayload>()
+        .add_animation_event::<SamplePayload>()
+        .add_animation_event_with_trigger::<SamplePayload, CustomTrigger>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
-            (keyboard_animation_control, update_frame_text, print_event),
+            (keyboard_animation_control, update_frame_text, print_message),
         )
+        .add_observer(print_event)
         .run();
 }
 
-// This Event needs to implement AnimationEvent
+#[derive(Debug, Default, Clone, Reflect)]
+struct CustomTrigger;
+
+unsafe impl<P: AnimationEventPayload> bevy::ecs::event::Trigger<AnimationEvent<P, Self>>
+    for CustomTrigger
+{
+    unsafe fn trigger(
+        &mut self,
+        world: bevy::ecs::world::DeferredWorld,
+        observers: &bevy::ecs::observer::CachedObservers,
+        trigger_context: &bevy::ecs::observer::TriggerContext,
+        event: &mut AnimationEvent<P, Self>,
+    ) {
+        todo!()
+    }
+}
+
+impl<P: AnimationEventPayload> AnimationEventTrigger<P> for CustomTrigger {
+    type Trigger = Self;
+}
+
+// This Paylaod needs to implement AnimationEventPayload
 #[derive(Debug, Clone, Reflect)]
 struct SamplePayload {
     msg: String,
 }
 
 // TODO: derive macro
-impl AnimationEventPayload for SamplePayload {
-    type Trigger = GlobalTrigger;
-}
+impl AnimationEventPayload for SamplePayload {}
 
 #[derive(Resource)]
 struct Animations(Vec<Handle<AnimationClip2D>>);
@@ -105,8 +130,12 @@ fn update_frame_text(
 }
 
 // You can easily react on your custom event just like a normal bevy event
-fn print_event(mut event_reader: MessageReader<AnimationEvent<SamplePayload>>) {
+fn print_message(mut event_reader: MessageReader<AnimationMessage<SamplePayload>>) {
     for event in event_reader.read() {
-        println!("{:?}", event);
+        println!("Message: {:?}", event);
     }
+}
+
+fn print_event(event: On<AnimationEvent<SamplePayload>>) {
+    println!("Event: {:?}", event.event());
 }
